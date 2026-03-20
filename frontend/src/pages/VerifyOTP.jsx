@@ -49,15 +49,13 @@ function VerifyOTP() {
   const [otp, setOtp] = useState('');
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
-  const [infoMessage, setInfoMessage] = useState(
-    'Enter the one-time passcode sent to your registered email.'
-  );
+  const [infoMessage, setInfoMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const storedEmail = getLoginEmail();
     if (!storedEmail) {
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
     setEmail(storedEmail);
@@ -96,13 +94,8 @@ function VerifyOTP() {
 
     try {
       const data = await verifyOtp({ email, otp });
-      if(data.token){
-        localStorage.setItem('token', data.token)
-      }
       setInfoMessage(data?.message || 'Login successful');
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 800);
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       setServerError(error.message || 'Failed to verify OTP');
     } finally {

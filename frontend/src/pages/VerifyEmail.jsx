@@ -61,8 +61,15 @@ export default function VerifyEmail() {
     const fromQuery = query.get('email');
     const fromStorage = getVerifyEmail();
     const prefill = fromQuery || fromStorage || '';
+
+    if (!prefill) {
+      navigate('/signup', { replace: true });
+      return;
+    }
+
     setForm((prev) => ({ ...prev, email: prefill }));
-  }, [query]);
+  }, [navigate, query]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,11 +85,11 @@ export default function VerifyEmail() {
 
     try {
       const data = await verifyEmailApi({
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         otp: form.otp.trim(),
       });
       setSuccessMessage(data?.message || 'Email verified successfully');
-      setTimeout(() => navigate('/login'), 900);
+      navigate('/login', { replace: true });
     } catch (err) {
       setServerError(err.message || 'Failed to verify email');
     } finally {
@@ -95,7 +102,7 @@ export default function VerifyEmail() {
     setServerError('');
     setSuccessMessage('');
     try {
-      const data = await resendVerificationOtpApi({ email: form.email.trim() });
+      const data = await resendVerificationOtpApi({ email: form.email.trim().toLowerCase() });
       setSuccessMessage(data?.message || 'Verification OTP resent to your email');
     } catch (err) {
       setServerError(err.message || 'Failed to resend OTP');

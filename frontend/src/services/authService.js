@@ -4,9 +4,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const TOKEN_KEY = 'mrms_jwt';
 const ROLE_KEY = 'mrms_role';
+const FULL_NAME_KEY = 'mrms_full_name';
 const LOGIN_EMAIL_KEY = 'mrms_login_email';
 const RESET_EMAIL_KEY = 'mrms_reset_email';
 const VERIFY_EMAIL_KEY = 'mrms_verify_email';
+
+const emitAuthChanged = () => {
+  window.dispatchEvent(new Event('auth-changed'));
+};
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 
@@ -16,6 +21,7 @@ export const setToken = (token) => {
   } else {
     localStorage.removeItem(TOKEN_KEY);
   }
+  emitAuthChanged();
 };
 
 export const getRole = () => localStorage.getItem(ROLE_KEY);
@@ -26,6 +32,18 @@ export const setRole = (role) => {
   } else {
     localStorage.removeItem(ROLE_KEY);
   }
+  emitAuthChanged();
+};
+
+export const getFullName = () => localStorage.getItem(FULL_NAME_KEY);
+
+export const setFullName = (fullName) => {
+  if (fullName) {
+    localStorage.setItem(FULL_NAME_KEY, fullName);
+  } else {
+    localStorage.removeItem(FULL_NAME_KEY);
+  }
+  emitAuthChanged();
 };
 
 export const getLoginEmail = () => localStorage.getItem(LOGIN_EMAIL_KEY);
@@ -39,6 +57,16 @@ export const setResetEmail = (email) =>
 export const getVerifyEmail = () => localStorage.getItem(VERIFY_EMAIL_KEY);
 export const setVerifyEmail = (email) =>
   email ? localStorage.setItem(VERIFY_EMAIL_KEY, email) : localStorage.removeItem(VERIFY_EMAIL_KEY);
+
+export const clearStoredUserData = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(ROLE_KEY);
+  localStorage.removeItem(FULL_NAME_KEY);
+  localStorage.removeItem(LOGIN_EMAIL_KEY);
+  localStorage.removeItem(RESET_EMAIL_KEY);
+  localStorage.removeItem(VERIFY_EMAIL_KEY);
+  emitAuthChanged();
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -94,13 +122,27 @@ export const resendVerificationOtp = async ({ email }) => {
   }
 };
 
-// 2. Login (OTP requested) → /login
+// 2. Login → /login (may return JWT immediately if 2FA is disabled)
 export const loginUser = async ({ email, password }) => {
   try {
-    const res = await api.post('/login', { email, password });
-    // store email for OTP verification step
-    setLoginEmail(email);
-    return res.data; // { message: "OTP sent to your email" }
+    const normalizedEmail = email.trim().toLowerCase();
+    const res = await api.post('/login', { email: normalizedEmail, password });
+    const data = res.data;
+    // Keep user identity available for dashboard/profile display.
+    setLoginEmail(normalizedEmail);
+
+    if (data?.token) {
+      // 2FA disabled: backend returned JWT directly
+      setToken(data.token);
+      setRole(data.role);
+      setFullName(data.fullName);
+    } else if (data?.twoFactorRequired) {
+      // 2FA enabled: store email for OTP verification step
+      setLoginEmail(normalizedEmail);
+      setRole(data.role);
+      setFullName(data.fullName);
+    }
+    return data;
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
@@ -110,15 +152,19 @@ export const loginUser = async ({ email, password }) => {
 export const verifyOtp = async ({ email, otp }) => {
   try {
     const res = await api.post('/verify-otp', { email, otp });
-    const { token, role } = res.data;
+    const { token, role, fullName } = res.data;
+    const normalizedEmail = email.trim().toLowerCase();
     if (token) {
       setToken(token);
     }
     if (role) {
       setRole(role);
     }
-    // clear the pending login email once successful
-    setLoginEmail(null);
+    if (fullName) {
+      setFullName(fullName);
+    }
+    // keep identity for the logged-in user experience
+    setLoginEmail(normalizedEmail);
     return res.data; // { message, token, role }
   } catch (error) {
     throw new Error(extractErrorMessage(error));
@@ -149,9 +195,15 @@ export const resetPassword = async ({ email, otp, newPassword }) => {
   }
 };
 
-export const logout = () => {
-  setToken(null);
-  setRole(null);
+export const logout = async () => {
+  // Always clear client auth state first so logout is instant in UI.
+  clearStoredUserData();
+
+  try {
+    await api.post('/logout');
+  } catch {
+    // Best effort only: client is already logged out locally.
+  }
 };
 
 export default {
@@ -163,8 +215,10 @@ export default {
   requestPasswordReset,
   resetPassword,
   logout,
+  clearStoredUserData,
   getToken,
   getRole,
+  getFullName,
   getLoginEmail,
   getResetEmail,
   getVerifyEmail,

@@ -32,21 +32,37 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
-  emailVerificationOtp: {
+  // Email verification (OTP after signup)
+  emailOtp: {
     type: String
   },
 
-  emailVerificationExpires: {
+  emailOtpExpires: {
     type: Date
   },
 
-   otp: {
-        type: String
-    },
+  // Login 2FA OTP (OTP after password when is2FAEnabled === true)
+  loginOtp: {
+    type: String
+  },
 
-    otpExpires: {
-        type: Date
-    }
+  loginOtpExpires: {
+    type: Date
+  },
+
+  is2FAEnabled: {
+    type: Boolean,
+    default: true
+  },
+
+  // Password reset OTP (separate so it doesn't conflict with login 2FA)
+  passwordResetOtp: {
+    type: String
+  },
+
+  passwordResetOtpExpires: {
+    type: Date
+  }
 
 }, { timestamps: true });
 

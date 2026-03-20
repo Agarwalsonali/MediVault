@@ -133,15 +133,14 @@ function Signup() {
     setSuccessMessage('');
 
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
       const data = await registerUser({
         fullName: form.fullName,
-        email: form.email,
+        email: normalizedEmail,
         password: form.password,
       });
       setSuccessMessage(data?.message || 'Registered successfully. Please verify your email.');
-      setTimeout(() => {
-        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`);
-      }, 1500);
+      navigate(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
     } catch (error) {
       setServerError(error.message || 'Failed to register');
     } finally {

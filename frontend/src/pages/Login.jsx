@@ -90,13 +90,23 @@ function Login() {
 
     try {
       const data = await loginUser({
-        email: form.email,
+        email: form.email.trim(),
         password: form.password,
       });
-      setInfoMessage(data?.message || 'OTP sent to your email');
-      setTimeout(() => {
-        navigate('/verify-otp');
-      }, 800);
+
+      if (data?.token) {
+        setInfoMessage(data?.message || 'Login successful');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      if (data?.twoFactorRequired) {
+        setInfoMessage(data?.message || 'OTP sent to your email');
+        navigate('/verify-otp', { replace: true });
+        return;
+      }
+
+      setServerError('Unexpected login response. Please try again.');
     } catch (error) {
       setServerError(error.message || 'Failed to login');
     } finally {
@@ -272,10 +282,10 @@ function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Sending OTP...</span>
+                  <span>Signing in...</span>
                 </span>
               ) : (
-                'Continue with OTP'
+                'Continue'
               )}
             </button>
           </form>

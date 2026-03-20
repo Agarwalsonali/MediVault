@@ -33,3 +33,15 @@ export const sendVerificationOtpEmail = async (email, otp) => {
   const text = `Your email verification OTP is ${otp}. It expires in 10 minutes.`;
   return sendEmail(email, subject, text);
 };
+
+export const sendLoginOtpEmail = async (email, otp) => {
+  const subject = "Your login OTP";
+  const text = `Your login OTP is ${otp}. It expires in 5 minutes.`;
+  return sendEmail(email, subject, text);
+};
+
+export const sendPasswordResetOtpEmail = async (email, otp) => {
+  const subject = "Password reset OTP";
+  const text = `Your password reset OTP is ${otp}. It expires in 5 minutes.`;
+  return sendEmail(email, subject, text);
+};
