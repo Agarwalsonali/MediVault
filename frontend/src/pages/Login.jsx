@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../services/authService.js';
+import { getDashboardPathByRole, loginUser } from '../services/authService.js';
 
 // Icon components
 const MailIcon = () => (
@@ -96,7 +96,7 @@ function Login() {
 
       if (data?.token) {
         setInfoMessage(data?.message || 'Login successful');
-        navigate('/dashboard', { replace: true });
+        navigate(getDashboardPathByRole(data?.role), { replace: true });
         return;
       }
 

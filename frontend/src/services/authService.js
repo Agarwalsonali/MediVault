@@ -9,11 +9,40 @@ const LOGIN_EMAIL_KEY = 'mrms_login_email';
 const RESET_EMAIL_KEY = 'mrms_reset_email';
 const VERIFY_EMAIL_KEY = 'mrms_verify_email';
 
+const ROLE_ADMIN = 'Admin';
+const ROLE_NURSE = 'Nurse';
+const ROLE_DOCTOR = 'Doctor';
+const ROLE_PATIENT = 'Patient';
+
 const emitAuthChanged = () => {
   window.dispatchEvent(new Event('auth-changed'));
 };
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
+
+export const decodeJwtToken = (token) => {
+  if (!token || typeof token !== 'string') return null;
+
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) return null;
+
+    const payloadBase64Url = tokenParts[1];
+    const payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedBase64 = payloadBase64.padEnd(payloadBase64.length + ((4 - (payloadBase64.length % 4)) % 4), '=');
+    const payloadJson = atob(paddedBase64);
+
+    return JSON.parse(payloadJson);
+  } catch {
+    return null;
+  }
+};
+
+export const getDashboardPathByRole = (role) => {
+  if (role === ROLE_ADMIN) return '/admin-dashboard';
+  if (role === ROLE_NURSE || role === ROLE_DOCTOR) return '/staff-dashboard';
+  return '/dashboard';
+};
 
 export const setToken = (token) => {
   if (token) {
@@ -66,6 +95,19 @@ export const clearStoredUserData = () => {
   localStorage.removeItem(RESET_EMAIL_KEY);
   localStorage.removeItem(VERIFY_EMAIL_KEY);
   emitAuthChanged();
+};
+
+const syncIdentityFromToken = (token, fallback = {}) => {
+  const decoded = decodeJwtToken(token) || {};
+
+  const resolvedRole = decoded.role || fallback.role || ROLE_PATIENT;
+  const resolvedName = decoded.name || decoded.fullName || fallback.fullName || fallback.name || '';
+
+  setToken(token);
+  setRole(resolvedRole);
+  setFullName(resolvedName);
+
+  return { role: resolvedRole, name: resolvedName };
 };
 
 const api = axios.create({
@@ -132,10 +174,17 @@ export const loginUser = async ({ email, password }) => {
     setLoginEmail(normalizedEmail);
 
     if (data?.token) {
-      // 2FA disabled: backend returned JWT directly
-      setToken(data.token);
-      setRole(data.role);
-      setFullName(data.fullName);
+      // 2FA disabled: decode JWT and store identity
+      const identity = syncIdentityFromToken(data.token, {
+        role: data.role,
+        fullName: data.fullName,
+      });
+
+      return {
+        ...data,
+        role: identity.role,
+        name: identity.name,
+      };
     } else if (data?.twoFactorRequired) {
       // 2FA enabled: store email for OTP verification step
       setLoginEmail(normalizedEmail);
@@ -154,18 +203,19 @@ export const verifyOtp = async ({ email, otp }) => {
     const res = await api.post('/verify-otp', { email, otp });
     const { token, role, fullName } = res.data;
     const normalizedEmail = email.trim().toLowerCase();
+    let identity = { role: role || ROLE_PATIENT, name: fullName || '' };
+
     if (token) {
-      setToken(token);
+      identity = syncIdentityFromToken(token, { role, fullName });
     }
-    if (role) {
-      setRole(role);
-    }
-    if (fullName) {
-      setFullName(fullName);
-    }
+
     // keep identity for the logged-in user experience
     setLoginEmail(normalizedEmail);
-    return res.data; // { message, token, role }
+    return {
+      ...res.data,
+      role: identity.role,
+      name: identity.name,
+    }; // { message, token, role, name }
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }

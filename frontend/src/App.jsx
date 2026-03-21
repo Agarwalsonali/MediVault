@@ -6,27 +6,62 @@ import VerifyOTP from './pages/VerifyOTP.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
-import { getToken } from './services/authService.js';
+import { decodeJwtToken, getDashboardPathByRole, getRole, getToken } from './services/authService.js';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import DashboardHome from './pages/DashboardHome.jsx';
 import Reports from './pages/Reports.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import Profile from './pages/Profile.jsx';
 import StaffDashboard from './pages/StaffDashboard.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import ManageStaff from './pages/ManageStaff.jsx';
+import AdminProfile from './pages/AdminProfile.jsx';
+import { getUser } from './utils/getUser.js';
 
-function PublicOnlyRoute({ isAuthenticated, children }) {
+const STAFF_ROLES = ['Nurse', 'Doctor'];
+const PATIENT_ROLES = ['Patient'];
+
+function PublicOnlyRoute({ isAuthenticated, role, children }) {
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getDashboardPathByRole(role)} replace />;
   }
+  return children;
+}
+
+function RoleRoute({ isAuthenticated, role, allowedRoles, children }) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(role)) {
+    return <Navigate to={getDashboardPathByRole(role)} replace />;
+  }
+
+  return children;
+}
+
+function AdminOnlyRoute({ children }) {
+  const token = getToken();
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const decoded = decodeJwtToken(token);
+  if (!decoded || decoded.role !== 'Admin') {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 }
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getToken());
+  const [role, setRole] = useState(() => getUser()?.role || getRole());
 
   useEffect(() => {
     const syncAuthState = () => {
       setIsAuthenticated(!!getToken());
+      setRole(getUser()?.role || getRole());
     };
 
     window.addEventListener('auth-changed', syncAuthState);
@@ -43,24 +78,72 @@ function App() {
       <Routes>
         <Route
           path="/"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+          element={isAuthenticated ? <Navigate to={getDashboardPathByRole(role)} replace /> : <Navigate to="/login" replace />}
         />
 
         <Route
           path="/dashboard"
-          element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" replace />}
+          element={
+            <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={PATIENT_ROLES}>
+              <DashboardLayout />
+            </RoleRoute>
+          }
         >
           <Route index element={<DashboardHome />} />
-          <Route path="staff" element={<StaffDashboard />} />
           <Route path="reports" element={<Reports />} />
           <Route path="upload" element={<UploadReport />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 
         <Route
+          path="/staff-dashboard"
+          element={
+            <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={STAFF_ROLES}>
+              <DashboardLayout />
+            </RoleRoute>
+          }
+        >
+          <Route index element={<StaffDashboard />} />
+          <Route path="upload" element={<UploadReport />} />
+        </Route>
+
+        <Route
+          path="/admin-dashboard"
+          element={
+            <AdminOnlyRoute>
+              <DashboardLayout />
+            </AdminOnlyRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+        </Route>
+
+        <Route
+          path="/manage-staff"
+          element={
+            <AdminOnlyRoute>
+              <DashboardLayout />
+            </AdminOnlyRoute>
+          }
+        >
+          <Route index element={<ManageStaff />} />
+        </Route>
+
+        <Route
+          path="/admin-profile"
+          element={
+            <AdminOnlyRoute>
+              <DashboardLayout />
+            </AdminOnlyRoute>
+          }
+        >
+          <Route index element={<AdminProfile />} />
+        </Route>
+
+        <Route
           path="/login"
           element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated}>
+            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
               <Login />
             </PublicOnlyRoute>
           }
@@ -68,7 +151,7 @@ function App() {
         <Route
           path="/signup"
           element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated}>
+            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
               <Signup />
             </PublicOnlyRoute>
           }
@@ -76,7 +159,7 @@ function App() {
         <Route
           path="/verify-email"
           element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated}>
+            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
               <VerifyEmail />
             </PublicOnlyRoute>
           }
@@ -84,7 +167,7 @@ function App() {
         <Route
           path="/verify-otp"
           element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated}>
+            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
               <VerifyOTP />
             </PublicOnlyRoute>
           }
@@ -93,7 +176,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Catch-all: redirect unknown routes */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/login'} replace />} />
       </Routes>
     </BrowserRouter>
   );

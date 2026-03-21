@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { verifyOtp, getLoginEmail } from '../services/authService.js';
+import { verifyOtp, getLoginEmail, getDashboardPathByRole } from '../services/authService.js';
 
 // Icon components
 const ShieldCheckIcon = () => (
@@ -95,7 +95,7 @@ function VerifyOTP() {
     try {
       const data = await verifyOtp({ email, otp });
       setInfoMessage(data?.message || 'Login successful');
-      navigate('/dashboard', { replace: true });
+      navigate(getDashboardPathByRole(data?.role), { replace: true });
     } catch (error) {
       setServerError(error.message || 'Failed to verify OTP');
     } finally {
