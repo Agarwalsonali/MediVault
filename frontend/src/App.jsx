@@ -6,6 +6,7 @@ import VerifyOTP from './pages/VerifyOTP.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+import SetPassword from './pages/SetPassword.jsx';
 import { decodeJwtToken, getDashboardPathByRole, getRole, getToken } from './services/authService.js';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import DashboardHome from './pages/DashboardHome.jsx';
@@ -18,7 +19,7 @@ import ManageStaff from './pages/ManageStaff.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import { getUser } from './utils/getUser.js';
 
-const STAFF_ROLES = ['Nurse', 'Doctor'];
+const STAFF_ROLES = ['Nurse', 'Doctor', 'Staff'];
 const PATIENT_ROLES = ['Patient'];
 
 function PublicOnlyRoute({ isAuthenticated, role, children }) {
@@ -174,6 +175,7 @@ function App() {
         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/set-password" element={<SetPassword />} />
 
         {/* Catch-all: redirect unknown routes */}
         <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/login'} replace />} />

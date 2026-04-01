@@ -17,13 +17,13 @@ const userSchema = new mongoose.Schema({
 
   password: {
     type: String,
-    required: true,
+    required: false,
     minlength: 6
   },
 
   role: {
     type: String,
-    enum: ["Doctor", "Nurse", "Admin", "Patient"],
+    enum: ["Doctor", "Nurse", "Staff", "Admin", "Patient"],
     default: "Patient"
   },
 
@@ -62,6 +62,19 @@ const userSchema = new mongoose.Schema({
 
   passwordResetOtpExpires: {
     type: Date
+  },
+
+  inviteToken: {
+    type: String
+  },
+
+  inviteTokenExpires: {
+    type: Date
+  },
+
+  isInviteAccepted: {
+    type: Boolean,
+    default: false
   }
 
 }, { timestamps: true });

@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { getToken } from './authService.js';
 
-const AUTH_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
-const API_BASE_URL = AUTH_BASE_URL.endsWith('/auth') ? AUTH_BASE_URL.slice(0, -5) : AUTH_BASE_URL || '/api';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '');
 
 const adminApi = axios.create({
   baseURL: API_BASE_URL,
@@ -25,12 +24,11 @@ const extractErrorMessage = (error) => {
   return error.message || 'Something went wrong. Please try again.';
 };
 
-export const createStaffUser = async ({ fullName, email, password, role }) => {
+export const createStaffUser = async ({ fullName, email, role }) => {
   try {
     const response = await adminApi.post('/admin/create-staff', {
       fullName,
       email,
-      password,
       role,
     });
 

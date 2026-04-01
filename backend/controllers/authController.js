@@ -1,12 +1,16 @@
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import {
   sendVerificationOtpEmail,
   sendLoginOtpEmail,
   sendPasswordResetOtpEmail,
+  sendInviteEmail,
 } from "../utils/sendEmail.js";
 import { generate6DigitOtp } from "../utils/otp.js";
+
+const STAFF_ROLES = ["Staff", "Nurse"];
 
 export const registerUser = async (req, res) => {
   try {
@@ -33,6 +37,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       role: "Patient",
       isVerified: false,
+      isInviteAccepted: true,
       emailOtp,
       emailOtpExpires
     });
@@ -57,6 +62,14 @@ export const loginUser = async (req, res) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+    if (STAFF_ROLES.includes(user.role) && !user.isInviteAccepted) {
+      return res.status(403).json({ message: "Please complete account setup from email" });
+    }
+
+    if (!user.password) {
+      return res.status(403).json({ message: "Please complete account setup from email" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
@@ -270,15 +283,14 @@ export const logoutUser = async (req, res) => {
 
 export const createStaffAccount = async (req, res) => {
   try {
-    const { fullName, email, password, role } = req.body;
+    const { fullName, email, role } = req.body;
 
-    if (!fullName || !email || !password || !role) {
-      return res.status(400).json({ message: "fullName, email, password and role are required" });
+    if (!fullName || !email || !role) {
+      return res.status(400).json({ message: "fullName, email and role are required" });
     }
 
-    const allowedStaffRoles = ["Doctor", "Nurse"];
-    if (!allowedStaffRoles.includes(role)) {
-      return res.status(400).json({ message: "Staff role must be Doctor or Nurse" });
+    if (!STAFF_ROLES.includes(role)) {
+      return res.status(400).json({ message: "Staff role must be Staff or Nurse" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -287,20 +299,36 @@ export const createStaffAccount = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const inviteToken = crypto.randomBytes(32).toString("hex");
+    const inviteTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const frontendBaseUrl = process.env.FRONTEND_URL?.trim();
+    if (!frontendBaseUrl) {
+      return res.status(500).json({ message: "FRONTEND_URL is not configured on server" });
+    }
+
+    const inviteLink = `${frontendBaseUrl.replace(/\/+$/, "")}/set-password?token=${inviteToken}`;
+    if (String(process.env.LOG_INVITE_LINK || "false").toLowerCase() === "true") {
+      console.log(`[InviteLink] ${normalizedEmail} -> ${inviteLink}`);
+    }
 
     const staffUser = await User.create({
       fullName,
       email: normalizedEmail,
-      password: hashedPassword,
       role,
       isVerified: true,
+      isInviteAccepted: false,
+      password: undefined,
+      inviteToken,
+      inviteTokenExpires,
       emailOtp: null,
       emailOtpExpires: null
     });
 
+    await sendInviteEmail(normalizedEmail, inviteLink);
+
     return res.status(201).json({
-      message: `${role} account created successfully`,
+      message: `${role} account created and invite email sent successfully`,
       user: {
         id: staffUser._id,
         fullName: staffUser.fullName,
@@ -308,6 +336,45 @@ export const createStaffAccount = async (req, res) => {
         role: staffUser.role
       }
     });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const setPasswordFromInvite = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "token and password are required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    const user = await User.findOne({ inviteToken: token });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid invite token" });
+    }
+
+    if (!user.inviteTokenExpires || user.inviteTokenExpires < new Date()) {
+      return res.status(400).json({ message: "Invite token has expired" });
+    }
+
+    if (user.isInviteAccepted) {
+      return res.status(400).json({ message: "Invite has already been used" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+    user.isInviteAccepted = true;
+    user.inviteToken = null;
+    user.inviteTokenExpires = null;
+    await user.save();
+
+    return res.status(200).json({ message: "Password set successfully. You can now login." });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -378,9 +445,7 @@ export const updateMyProfile = async (req, res) => {
 
 export const getStaffList = async (req, res) => {
   try {
-    const staffRoles = ["Doctor", "Nurse"];
-
-    const staff = await User.find({ role: { $in: staffRoles } })
+    const staff = await User.find({ role: { $in: STAFF_ROLES } })
       .select("fullName email role createdAt")
       .sort({ createdAt: -1 });
 
@@ -394,14 +459,13 @@ export const updateStaffMember = async (req, res) => {
   try {
     const { id } = req.params;
     const { fullName, email, role } = req.body;
-    const staffRoles = ["Doctor", "Nurse"];
 
     if (!fullName || !email || !role) {
       return res.status(400).json({ message: "fullName, email and role are required" });
     }
 
-    if (!staffRoles.includes(role)) {
-      return res.status(400).json({ message: "Role must be Doctor or Nurse" });
+    if (!STAFF_ROLES.includes(role)) {
+      return res.status(400).json({ message: "Role must be Staff or Nurse" });
     }
 
     const staff = await User.findById(id);
@@ -409,8 +473,8 @@ export const updateStaffMember = async (req, res) => {
       return res.status(404).json({ message: "Staff user not found" });
     }
 
-    if (!staffRoles.includes(staff.role)) {
-      return res.status(400).json({ message: "Only Nurse or Doctor users can be updated" });
+    if (!STAFF_ROLES.includes(staff.role)) {
+      return res.status(400).json({ message: "Only Nurse or Staff users can be updated" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -442,15 +506,14 @@ export const updateStaffMember = async (req, res) => {
 export const deleteStaffMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const staffRoles = ["Doctor", "Nurse"];
 
     const staff = await User.findById(id);
     if (!staff) {
       return res.status(404).json({ message: "Staff user not found" });
     }
 
-    if (!staffRoles.includes(staff.role)) {
-      return res.status(400).json({ message: "Only Nurse or Doctor users can be deleted" });
+    if (!STAFF_ROLES.includes(staff.role)) {
+      return res.status(400).json({ message: "Only Nurse or Staff users can be deleted" });
     }
 
     await User.deleteOne({ _id: staff._id });

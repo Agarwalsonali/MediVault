@@ -6,7 +6,6 @@ const STAFF_ROLES = ['Nurse', 'Staff'];
 const initialCreateForm = {
   fullName: '',
   email: '',
-  password: '',
   role: 'Nurse',
 };
 
@@ -53,22 +52,6 @@ export default function ManageStaff() {
 
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
-  const passwordStrength = useMemo(() => {
-    const password = createForm.password;
-    if (!password) return 'Add a strong password';
-
-    let score = 0;
-    if (password.length >= 8) score += 1;
-    if (/[A-Z]/.test(password)) score += 1;
-    if (/[a-z]/.test(password)) score += 1;
-    if (/\d/.test(password)) score += 1;
-    if (/[^\w\s]/.test(password)) score += 1;
-
-    if (score <= 2) return 'Weak';
-    if (score <= 4) return 'Good';
-    return 'Strong';
-  }, [createForm.password]);
 
   const filteredStaff = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -123,9 +106,6 @@ export default function ManageStaff() {
     if (!createForm.email.trim()) nextErrors.email = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email)) nextErrors.email = 'Please enter a valid email address.';
 
-    if (!createForm.password) nextErrors.password = 'Password is required.';
-    else if (createForm.password.length < 8) nextErrors.password = 'Password must be at least 8 characters.';
-
     if (!STAFF_ROLES.includes(createForm.role)) nextErrors.role = 'Role must be Nurse or Staff.';
 
     return nextErrors;
@@ -177,11 +157,10 @@ export default function ManageStaff() {
       await createStaffUser({
         fullName: createForm.fullName.trim(),
         email: createForm.email.trim().toLowerCase(),
-        password: createForm.password,
         role: createForm.role,
       });
 
-      setSuccessMessage('Staff account created successfully');
+      setSuccessMessage('Staff account created. Invite email sent successfully.');
       setCreateForm(initialCreateForm);
       setCreateErrors({});
       await loadStaffList();
@@ -262,7 +241,7 @@ export default function ManageStaff() {
     <div className="space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Manage Staff</h1>
-        <p className="mt-2 text-sm text-slate-600 sm:text-base">Create, update, and remove Nurse or Staff accounts.</p>
+        <p className="mt-2 text-sm text-slate-600 sm:text-base">Create, invite, update, and remove Nurse or Staff accounts.</p>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -284,13 +263,6 @@ export default function ManageStaff() {
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">Email Address</label>
             <input id="email" name="email" type="email" value={createForm.email} onChange={handleCreateChange} placeholder="staff@example.com" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
             {createErrors.email && <p className="mt-1 text-xs font-medium text-rose-600">{createErrors.email}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
-            <input id="password" name="password" type="password" value={createForm.password} onChange={handleCreateChange} placeholder="Minimum 8 characters" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
-            <p className="mt-1 text-xs text-slate-500">Password strength: {passwordStrength}</p>
-            {createErrors.password && <p className="mt-1 text-xs font-medium text-rose-600">{createErrors.password}</p>}
           </div>
 
           <div>

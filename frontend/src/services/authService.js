@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+const API_BASE_URL = RAW_API_URL
+  ? (RAW_API_URL.endsWith('/auth') ? RAW_API_URL : `${RAW_API_URL}/auth`)
+  : '/api/auth';
 
 const TOKEN_KEY = 'mrms_jwt';
 const ROLE_KEY = 'mrms_role';
@@ -12,6 +15,7 @@ const VERIFY_EMAIL_KEY = 'mrms_verify_email';
 const ROLE_ADMIN = 'Admin';
 const ROLE_NURSE = 'Nurse';
 const ROLE_DOCTOR = 'Doctor';
+const ROLE_STAFF = 'Staff';
 const ROLE_PATIENT = 'Patient';
 
 const emitAuthChanged = () => {
@@ -40,7 +44,7 @@ export const decodeJwtToken = (token) => {
 
 export const getDashboardPathByRole = (role) => {
   if (role === ROLE_ADMIN) return '/admin-dashboard';
-  if (role === ROLE_NURSE || role === ROLE_DOCTOR) return '/staff-dashboard';
+  if (role === ROLE_NURSE || role === ROLE_DOCTOR || role === ROLE_STAFF) return '/staff-dashboard';
   return '/dashboard';
 };
 
@@ -245,6 +249,15 @@ export const resetPassword = async ({ email, otp, newPassword }) => {
   }
 };
 
+export const setPasswordFromInvite = async ({ token, password }) => {
+  try {
+    const res = await api.post('/set-password', { token, password });
+    return res.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
 export const logout = async () => {
   // Always clear client auth state first so logout is instant in UI.
   clearStoredUserData();
@@ -264,6 +277,7 @@ export default {
   verifyOtp,
   requestPasswordReset,
   resetPassword,
+  setPasswordFromInvite,
   logout,
   clearStoredUserData,
   getToken,
