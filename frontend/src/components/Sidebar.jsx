@@ -69,7 +69,6 @@ const getItemsByRole = (role) => {
       sectionLabel: 'Staff Panel',
       items: [
         { to: '/staff-dashboard', label: 'Staff Dashboard', icon: IconDashboard, end: true },
-        { to: '/staff-dashboard/upload', label: 'Upload Report', icon: IconUpload },
       ],
     };
   }

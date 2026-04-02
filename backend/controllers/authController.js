@@ -9,6 +9,7 @@ import {
   sendInviteEmail,
 } from "../utils/sendEmail.js";
 import { generate6DigitOtp } from "../utils/otp.js";
+import { validatePassword } from "../utils/passwordValidator.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
 
@@ -24,6 +25,15 @@ export const registerUser = async (req, res) => {
     const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ 
+        message: "Password does not meet requirements",
+        errors: passwordValidation.errors 
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -189,6 +199,15 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
+    // Validate password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ 
+        message: "Password does not meet requirements",
+        errors: passwordValidation.errors 
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
@@ -349,8 +368,13 @@ export const setPasswordFromInvite = async (req, res) => {
       return res.status(400).json({ message: "token and password are required" });
     }
 
-    if (password.length < 8) {
-      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ 
+        message: "Password does not meet requirements",
+        errors: passwordValidation.errors 
+      });
     }
 
     const user = await User.findOne({ inviteToken: token });
@@ -424,6 +448,14 @@ export const updateMyProfile = async (req, res) => {
     user.email = normalizedEmail;
 
     if (password && password.trim()) {
+      // Validate password strength
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({ 
+          message: "Password does not meet requirements",
+          errors: passwordValidation.errors 
+        });
+      }
       user.password = await bcrypt.hash(password, 10);
     }
 

@@ -18,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import ManageStaff from './pages/ManageStaff.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import { getUser } from './utils/getUser.js';
+import { useSessionTimeout } from './hooks/useSessionTimeout.js';
 
 const STAFF_ROLES = ['Nurse', 'Doctor', 'Staff'];
 const PATIENT_ROLES = ['Patient'];
@@ -55,6 +56,13 @@ function AdminOnlyRoute({ children }) {
   return children;
 }
 
+// Session timeout manager component
+function SessionTimeoutManager({ isAuthenticated, children }) {
+  // Enable session timeout only when user is authenticated (300 minutes)
+  useSessionTimeout(isAuthenticated ? 300 : false);
+  return children;
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getToken());
   const [role, setRole] = useState(() => getUser()?.role || getRole());
@@ -76,110 +84,112 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={isAuthenticated ? <Navigate to={getDashboardPathByRole(role)} replace /> : <Navigate to="/login" replace />}
-        />
+      <SessionTimeoutManager isAuthenticated={isAuthenticated}>
+        <Routes>
+          <Route
+            path="/"
+            element={isAuthenticated ? <Navigate to={getDashboardPathByRole(role)} replace /> : <Navigate to="/login" replace />}
+          />
 
-        <Route
-          path="/dashboard"
-          element={
-            <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={PATIENT_ROLES}>
-              <DashboardLayout />
-            </RoleRoute>
-          }
-        >
-          <Route index element={<DashboardHome />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="upload" element={<UploadReport />} />
-          <Route path="profile" element={<Profile />} />
-        </Route>
+          <Route
+            path="/dashboard"
+            element={
+              <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={PATIENT_ROLES}>
+                <DashboardLayout />
+              </RoleRoute>
+            }
+          >
+            <Route index element={<DashboardHome />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="upload" element={<UploadReport />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
 
-        <Route
-          path="/staff-dashboard"
-          element={
-            <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={STAFF_ROLES}>
-              <DashboardLayout />
-            </RoleRoute>
-          }
-        >
-          <Route index element={<StaffDashboard />} />
-          <Route path="upload" element={<UploadReport />} />
-        </Route>
+          <Route
+            path="/staff-dashboard"
+            element={
+              <RoleRoute isAuthenticated={isAuthenticated} role={role} allowedRoles={STAFF_ROLES}>
+                <DashboardLayout />
+              </RoleRoute>
+            }
+          >
+            <Route index element={<StaffDashboard />} />
+            <Route path="upload" element={<UploadReport />} />
+          </Route>
 
-        <Route
-          path="/admin-dashboard"
-          element={
-            <AdminOnlyRoute>
-              <DashboardLayout />
-            </AdminOnlyRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-        </Route>
+          <Route
+            path="/admin-dashboard"
+            element={
+              <AdminOnlyRoute>
+                <DashboardLayout />
+              </AdminOnlyRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+          </Route>
 
-        <Route
-          path="/manage-staff"
-          element={
-            <AdminOnlyRoute>
-              <DashboardLayout />
-            </AdminOnlyRoute>
-          }
-        >
-          <Route index element={<ManageStaff />} />
-        </Route>
+          <Route
+            path="/manage-staff"
+            element={
+              <AdminOnlyRoute>
+                <DashboardLayout />
+              </AdminOnlyRoute>
+            }
+          >
+            <Route index element={<ManageStaff />} />
+          </Route>
 
-        <Route
-          path="/admin-profile"
-          element={
-            <AdminOnlyRoute>
-              <DashboardLayout />
-            </AdminOnlyRoute>
-          }
-        >
-          <Route index element={<AdminProfile />} />
-        </Route>
+          <Route
+            path="/admin-profile"
+            element={
+              <AdminOnlyRoute>
+                <DashboardLayout />
+              </AdminOnlyRoute>
+            }
+          >
+            <Route index element={<AdminProfile />} />
+          </Route>
 
-        <Route
-          path="/login"
-          element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
-              <Login />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
-              <Signup />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/verify-email"
-          element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
-              <VerifyEmail />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/verify-otp"
-          element={
-            <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
-              <VerifyOTP />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/set-password" element={<SetPassword />} />
+          <Route
+            path="/login"
+            element={
+              <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
+                <Login />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
+                <Signup />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="/verify-email"
+            element={
+              <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
+                <VerifyEmail />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="/verify-otp"
+            element={
+              <PublicOnlyRoute isAuthenticated={isAuthenticated} role={role}>
+                <VerifyOTP />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/set-password" element={<SetPassword />} />
 
-        {/* Catch-all: redirect unknown routes */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/login'} replace />} />
-      </Routes>
+          {/* Catch-all: redirect unknown routes */}
+          <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/login'} replace />} />
+        </Routes>
+      </SessionTimeoutManager>
     </BrowserRouter>
   );
 }

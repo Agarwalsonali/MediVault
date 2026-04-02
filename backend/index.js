@@ -6,6 +6,8 @@ import { sendEmail } from "./utils/sendEmail.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import patientRoutes from "./routes/patientRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 dotenv.config();
 
@@ -22,6 +24,9 @@ app.use(
   })
 );
 
+// Serve static files for uploads
+app.use("/uploads", express.static("uploads"));
+
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
@@ -31,5 +36,7 @@ mongoose.connect(process.env.MONGO_URL)
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
