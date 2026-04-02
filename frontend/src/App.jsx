@@ -15,6 +15,7 @@ import Reports from './pages/Reports.jsx';
 import UploadReport from './pages/UploadReport.jsx';
 import Profile from './pages/Profile.jsx';
 import StaffDashboard from './pages/StaffDashboard.jsx';
+import StaffProfile from './pages/StaffProfile.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ManageStaff from './pages/ManageStaff.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
@@ -116,6 +117,7 @@ function App() {
           >
             <Route index element={<StaffDashboard />} />
             <Route path="upload" element={<UploadReport />} />
+            <Route path="profile" element={<StaffProfile />} />
           </Route>
 
           <Route

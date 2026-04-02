@@ -17,14 +17,17 @@ const NAV_CONFIG = {
   Doctor: [
     { to: '/staff-dashboard',        icon: Stethoscope, label: 'Dashboard',     end: true },
     { to: '/staff-dashboard/upload', icon: Upload,      label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,        label: 'Profile' },
   ],
   Nurse: [
     { to: '/staff-dashboard',        icon: Activity, label: 'Dashboard',     end: true },
     { to: '/staff-dashboard/upload', icon: Upload,   label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,     label: 'Profile' },
   ],
   Staff: [
     { to: '/staff-dashboard',        icon: Activity, label: 'Dashboard',     end: true },
     { to: '/staff-dashboard/upload', icon: Upload,   label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,     label: 'Profile' },
   ],
   Admin: [
     { to: '/admin-dashboard', icon: LayoutDashboard, label: 'Dashboard',    end: true },
@@ -40,6 +43,7 @@ const PAGE_TITLES = {
   '/dashboard/profile':     'Profile',
   '/staff-dashboard':       'Staff Dashboard',
   '/staff-dashboard/upload':'Upload Report',
+  '/staff-dashboard/profile':'Staff Profile',
   '/admin-dashboard':       'Admin Dashboard',
   '/manage-staff':          'Manage Staff',
   '/admin-profile':         'Admin Profile',
@@ -88,8 +92,11 @@ export default function DashboardLayout() {
     }
   }
 
-  const profilePath =
-    role === 'Admin' ? '/admin-profile' : '/dashboard/profile';
+  const profilePath = role === 'Admin'
+    ? '/admin-profile'
+    : (role === 'Doctor' || role === 'Nurse' || role === 'Staff')
+      ? '/staff-dashboard/profile'
+      : '/dashboard/profile';
 
   return (
     <div className="dash-shell">
