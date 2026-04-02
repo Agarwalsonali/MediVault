@@ -27,6 +27,12 @@ const userSchema = new mongoose.Schema({
     default: "Patient"
   },
 
+  avatarUrl: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+
   isVerified: {
     type: Boolean,
     default: false

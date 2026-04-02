@@ -2,6 +2,8 @@ import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
 import {
   sendVerificationOtpEmail,
   sendLoginOtpEmail,
@@ -12,6 +14,7 @@ import { generate6DigitOtp } from "../utils/otp.js";
 import { validatePassword } from "../utils/passwordValidator.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
+const AVATARS_DIR = path.join(process.cwd(), "uploads", "avatars");
 
 export const registerUser = async (req, res) => {
   try {
@@ -406,7 +409,7 @@ export const setPasswordFromInvite = async (req, res) => {
 
 export const getMyProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("fullName email role");
+    const user = await User.findById(req.user.id).select("fullName email role avatarUrl");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -417,6 +420,7 @@ export const getMyProfile = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl || "",
       },
     });
   } catch (error) {
@@ -468,6 +472,85 @@ export const updateMyProfile = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl || "",
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const uploadMyProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Image file is required" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      await fs.unlink(req.file.path).catch(() => {});
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await fs.mkdir(AVATARS_DIR, { recursive: true });
+
+    const ext = path.extname(req.file.originalname || "").toLowerCase() || ".jpg";
+    const fileName = `${user._id}-${Date.now()}${ext}`;
+    const destinationPath = path.join(AVATARS_DIR, fileName);
+
+    await fs.rename(req.file.path, destinationPath);
+
+    if (user.avatarUrl && user.avatarUrl.startsWith("/uploads/avatars/")) {
+      const oldPath = path.join(process.cwd(), user.avatarUrl.replace(/^\//, ""));
+      await fs.unlink(oldPath).catch(() => {});
+    }
+
+    user.avatarUrl = `/uploads/avatars/${fileName}`;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile image updated successfully",
+      avatarUrl: user.avatarUrl,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      },
+    });
+  } catch (error) {
+    if (req.file?.path) {
+      await fs.unlink(req.file.path).catch(() => {});
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const removeMyProfileImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.avatarUrl && user.avatarUrl.startsWith("/uploads/avatars/")) {
+      const oldPath = path.join(process.cwd(), user.avatarUrl.replace(/^\//, ""));
+      await fs.unlink(oldPath).catch(() => {});
+    }
+
+    user.avatarUrl = "";
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile image removed successfully",
+      avatarUrl: "",
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        avatarUrl: "",
       },
     });
   } catch (error) {

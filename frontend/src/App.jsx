@@ -7,6 +7,7 @@ import VerifyEmail from './pages/VerifyEmail.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import SetPassword from './pages/SetPassword.jsx';
+import Home from './pages/Home.jsx';
 import { decodeJwtToken, getDashboardPathByRole, getRole, getToken } from './services/authService.js';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import DashboardHome from './pages/DashboardHome.jsx';
@@ -88,7 +89,7 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={isAuthenticated ? <Navigate to={getDashboardPathByRole(role)} replace /> : <Navigate to="/login" replace />}
+            element={isAuthenticated ? <Navigate to={getDashboardPathByRole(role)} replace /> : <Home />}
           />
 
           <Route
@@ -187,7 +188,7 @@ function App() {
           <Route path="/set-password" element={<SetPassword />} />
 
           {/* Catch-all: redirect unknown routes */}
-          <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/login'} replace />} />
+          <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/'} replace />} />
         </Routes>
       </SessionTimeoutManager>
     </BrowserRouter>

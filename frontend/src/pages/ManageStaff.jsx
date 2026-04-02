@@ -1,446 +1,404 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createStaffUser, deleteStaffUser, fetchStaffUsers, updateStaffUser } from '../services/adminService.js';
+import { Users, Search, RefreshCw, Plus, Edit2, Trash2, X, CheckCircle, ChevronLeft, ChevronRight, User, Mail, Shield } from 'lucide-react';
 
-const STAFF_ROLES = ['Nurse', 'Staff'];
+const ROLES = ['Nurse', 'Staff'];
+const INIT_CREATE = { fullName: '', email: '', role: 'Nurse' };
+const INIT_EDIT   = { id: '', fullName: '', email: '', role: 'Nurse' };
 
-const initialCreateForm = {
-  fullName: '',
-  email: '',
-  role: 'Nurse',
+const ROLE_STYLE = {
+  Nurse: { cls: 'mv-badge-teal',   label: 'Nurse' },
+  Staff: { cls: 'mv-badge-blue',   label: 'Staff' },
+  Doctor:{ cls: 'mv-badge-purple', label: 'Doctor' },
 };
 
-const initialEditForm = {
-  id: '',
-  fullName: '',
-  email: '',
-  role: 'Nurse',
-};
-
-function Alert({ type = 'success', message }) {
+function Alert({ type, message }) {
   if (!message) return null;
-
-  const styles =
-    type === 'error'
-      ? 'border-rose-200 bg-rose-50 text-rose-700'
-      : 'border-emerald-200 bg-emerald-50 text-emerald-700';
-
-  return <div className={`rounded-xl border px-4 py-3 text-sm font-medium ${styles}`}>{message}</div>;
+  return (
+    <div className={`mv-alert ${type === 'error' ? 'mv-alert-error' : 'mv-alert-success'} animate-fade-in`}>
+      {type === 'error'
+        ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        : <CheckCircle size={15} />
+      }
+      <span>{message}</span>
+    </div>
+  );
 }
 
-function RoleBadge({ role }) {
-  const badgeClass = role === 'Staff' ? 'bg-green-50 text-green-700 ring-green-200' : 'bg-emerald-50 text-emerald-700 ring-emerald-200';
-
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${badgeClass}`}>{role}</span>;
+function FieldErr({ msg }) {
+  if (!msg) return null;
+  return (
+    <p className="mv-field-error">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+      {msg}
+    </p>
+  );
 }
 
 export default function ManageStaff() {
-  const [createForm, setCreateForm] = useState(initialCreateForm);
+  const [createForm,   setCreateForm]   = useState(INIT_CREATE);
   const [createErrors, setCreateErrors] = useState({});
-  const [createLoading, setCreateLoading] = useState(false);
+  const [creating,     setCreating]     = useState(false);
+  const [staffList,    setStaffList]    = useState([]);
+  const [listLoading,  setListLoading]  = useState(false);
+  const [search,       setSearch]       = useState('');
+  const [roleFilter,   setRoleFilter]   = useState('All');
+  const [page,         setPage]         = useState(1);
+  const PAGE_SIZE = 5;
+  const [isEditing,    setIsEditing]    = useState(false);
+  const [editForm,     setEditForm]     = useState(INIT_EDIT);
+  const [editErrors,   setEditErrors]   = useState({});
+  const [editLoading,  setEditLoading]  = useState(false);
+  const [successMsg,   setSuccessMsg]   = useState('');
+  const [errorMsg,     setErrorMsg]     = useState('');
 
-  const [staffList, setStaffList] = useState([]);
-  const [listLoading, setListLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return staffList.filter(s =>
+      (roleFilter === 'All' || s.role === roleFilter) &&
+      (!q || `${s.fullName} ${s.email}`.toLowerCase().includes(q))
+    );
+  }, [staffList, search, roleFilter]);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState(initialEditForm);
-  const [editErrors, setEditErrors] = useState({});
-  const [editLoading, setEditLoading] = useState(false);
+  const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated   = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page]);
 
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const filteredStaff = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-
-    return staffList.filter((staff) => {
-      const matchesRole = roleFilter === 'All' ? true : staff.role === roleFilter;
-      const searchable = `${staff.fullName || ''} ${staff.email || ''}`.toLowerCase();
-      const matchesSearch = query ? searchable.includes(query) : true;
-
-      return matchesRole && matchesSearch;
-    });
-  }, [roleFilter, searchTerm, staffList]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / pageSize));
-
-  const paginatedStaff = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredStaff.slice(start, start + pageSize);
-  }, [currentPage, filteredStaff]);
-
-  const loadStaffList = async () => {
+  const load = async () => {
     setListLoading(true);
     try {
-      const response = await fetchStaffUsers();
-      setStaffList(response?.staff || []);
-    } catch (error) {
-      setErrorMessage(error.message || 'Failed to load staff list.');
-    } finally {
-      setListLoading(false);
-    }
+      const res = await fetchStaffUsers();
+      setStaffList(res?.staff || []);
+    } catch (e) { setErrorMsg(e.message || 'Failed to load staff.'); }
+    finally { setListLoading(false); }
   };
 
-  useEffect(() => {
-    loadStaffList();
-  }, []);
+  useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [search, roleFilter]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, roleFilter]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
-  const validateCreateForm = () => {
-    const nextErrors = {};
-
-    if (!createForm.fullName.trim()) nextErrors.fullName = 'Full name is required.';
-
-    if (!createForm.email.trim()) nextErrors.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email)) nextErrors.email = 'Please enter a valid email address.';
-
-    if (!STAFF_ROLES.includes(createForm.role)) nextErrors.role = 'Role must be Nurse or Staff.';
-
-    return nextErrors;
+  const validateCreate = () => {
+    const e = {};
+    if (!createForm.fullName.trim()) e.fullName = 'Full name is required.';
+    if (!createForm.email.trim())    e.email    = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createForm.email)) e.email = 'Enter a valid email.';
+    if (!ROLES.includes(createForm.role)) e.role = 'Select a valid role.';
+    return e;
+  };
+  const validateEdit = () => {
+    const e = {};
+    if (!editForm.fullName.trim()) e.fullName = 'Full name is required.';
+    if (!editForm.email.trim())    e.email    = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) e.email = 'Enter a valid email.';
+    if (!ROLES.includes(editForm.role)) e.role = 'Select a valid role.';
+    return e;
   };
 
-  const validateEditForm = () => {
-    const nextErrors = {};
-
-    if (!editForm.fullName.trim()) nextErrors.fullName = 'Full name is required.';
-
-    if (!editForm.email.trim()) nextErrors.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) nextErrors.email = 'Please enter a valid email address.';
-
-    if (!STAFF_ROLES.includes(editForm.role)) nextErrors.role = 'Role must be Nurse or Staff.';
-
-    return nextErrors;
+  const handleCreateChange = e => {
+    const { name, value } = e.target;
+    setCreateForm(p => ({ ...p, [name]: value }));
+    setCreateErrors(p => ({ ...p, [name]: '' }));
+    setSuccessMsg(''); setErrorMsg('');
+  };
+  const handleEditChange = e => {
+    const { name, value } = e.target;
+    setEditForm(p => ({ ...p, [name]: value }));
+    setEditErrors(p => ({ ...p, [name]: '' }));
+    setSuccessMsg(''); setErrorMsg('');
   };
 
-  const handleCreateChange = (event) => {
-    const { name, value } = event.target;
-    setCreateForm((prev) => ({ ...prev, [name]: value }));
-    setCreateErrors((prev) => ({ ...prev, [name]: '' }));
-    setSuccessMessage('');
-    setErrorMessage('');
-  };
-
-  const handleEditChange = (event) => {
-    const { name, value } = event.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
-    setEditErrors((prev) => ({ ...prev, [name]: '' }));
-    setSuccessMessage('');
-    setErrorMessage('');
-  };
-
-  const handleCreateSubmit = async (event) => {
-    event.preventDefault();
-
-    const validationErrors = validateCreateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setCreateErrors(validationErrors);
-      return;
-    }
-
-    setCreateLoading(true);
-    setSuccessMessage('');
-    setErrorMessage('');
-
+  const handleCreate = async e => {
+    e.preventDefault();
+    const ve = validateCreate();
+    if (Object.keys(ve).length) { setCreateErrors(ve); return; }
+    setCreating(true); setSuccessMsg(''); setErrorMsg('');
     try {
-      await createStaffUser({
-        fullName: createForm.fullName.trim(),
-        email: createForm.email.trim().toLowerCase(),
-        role: createForm.role,
-      });
-
-      setSuccessMessage('Staff account created. Invite email sent successfully.');
-      setCreateForm(initialCreateForm);
-      setCreateErrors({});
-      await loadStaffList();
-    } catch (error) {
-      setErrorMessage(error.message || 'Unable to create staff account.');
-    } finally {
-      setCreateLoading(false);
-    }
+      await createStaffUser({ fullName: createForm.fullName.trim(), email: createForm.email.trim().toLowerCase(), role: createForm.role });
+      setSuccessMsg('Staff account created. Invite email sent.');
+      setCreateForm(INIT_CREATE); setCreateErrors({});
+      await load();
+    } catch (e) { setErrorMsg(e.message || 'Could not create account.'); }
+    finally { setCreating(false); }
   };
 
-  const startEdit = (staff) => {
+  const startEdit = s => {
     setIsEditing(true);
-    setEditForm({
-      id: staff._id || staff.id,
-      fullName: staff.fullName || '',
-      email: staff.email || '',
-      role: staff.role || 'Nurse',
-    });
-    setEditErrors({});
-    setSuccessMessage('');
-    setErrorMessage('');
+    setEditForm({ id: s._id || s.id, fullName: s.fullName || '', email: s.email || '', role: s.role || 'Nurse' });
+    setEditErrors({}); setSuccessMsg(''); setErrorMsg('');
   };
+  const cancelEdit = () => { setIsEditing(false); setEditForm(INIT_EDIT); setEditErrors({}); };
 
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setEditForm(initialEditForm);
-    setEditErrors({});
-  };
-
-  const handleEditSubmit = async (event) => {
-    event.preventDefault();
-
-    const validationErrors = validateEditForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setEditErrors(validationErrors);
-      return;
-    }
-
-    setEditLoading(true);
-    setSuccessMessage('');
-    setErrorMessage('');
-
+  const handleEditSubmit = async e => {
+    e.preventDefault();
+    const ve = validateEdit();
+    if (Object.keys(ve).length) { setEditErrors(ve); return; }
+    setEditLoading(true); setSuccessMsg(''); setErrorMsg('');
     try {
-      await updateStaffUser(editForm.id, {
-        fullName: editForm.fullName.trim(),
-        email: editForm.email.trim().toLowerCase(),
-        role: editForm.role,
-      });
-
-      setSuccessMessage('Staff updated successfully');
-      cancelEdit();
-      await loadStaffList();
-    } catch (error) {
-      setErrorMessage(error.message || 'Unable to update staff account.');
-    } finally {
-      setEditLoading(false);
-    }
+      await updateStaffUser(editForm.id, { fullName: editForm.fullName.trim(), email: editForm.email.trim().toLowerCase(), role: editForm.role });
+      setSuccessMsg('Staff updated successfully.');
+      cancelEdit(); await load();
+    } catch (e) { setErrorMsg(e.message || 'Could not update account.'); }
+    finally { setEditLoading(false); }
   };
 
-  const handleDelete = async (staff) => {
-    const id = staff._id || staff.id;
-    const confirmDelete = window.confirm(`Delete ${staff.fullName} (${staff.role})?`);
-    if (!confirmDelete) return;
-
-    setSuccessMessage('');
-    setErrorMessage('');
-
+  const handleDelete = async s => {
+    if (!window.confirm(`Delete ${s.fullName} (${s.role})?`)) return;
+    setSuccessMsg(''); setErrorMsg('');
     try {
-      await deleteStaffUser(id);
-      setSuccessMessage('Staff deleted successfully');
-      await loadStaffList();
-    } catch (error) {
-      setErrorMessage(error.message || 'Unable to delete staff account.');
-    }
+      await deleteStaffUser(s._id || s.id);
+      setSuccessMsg('Staff deleted successfully.');
+      await load();
+    } catch (e) { setErrorMsg(e.message || 'Could not delete account.'); }
   };
+
+  /* Shared field style */
+  const inp = (err) => ({ className: `mv-input${err ? ' error' : ''}` });
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Manage Staff</h1>
-        <p className="mt-2 text-sm text-slate-600 sm:text-base">Create, invite, update, and remove Nurse or Staff accounts.</p>
-      </section>
+    <div className="dash-page">
+      <div style={{ marginBottom: '1.75rem' }}>
+        <h1 className="dash-page-title">Manage Staff</h1>
+        <p className="dash-page-subtitle">Create, invite, update and remove Nurse or Staff accounts</p>
+      </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <h2 className="text-lg font-semibold text-slate-900">Create Staff Account</h2>
-
-        <div className="mt-4 space-y-3">
-          <Alert type="success" message={successMessage} />
-          <Alert type="error" message={errorMessage} />
+      {/* Global alerts */}
+      {(successMsg || errorMsg) && (
+        <div style={{ marginBottom: '1.25rem' }}>
+          <Alert type={errorMsg ? 'error' : 'success'} message={errorMsg || successMsg} />
         </div>
+      )}
 
-        <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleCreateSubmit}>
-          <div>
-            <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-slate-700">Full Name</label>
-            <input id="fullName" name="fullName" type="text" value={createForm.fullName} onChange={handleCreateChange} placeholder="Enter staff full name" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
-            {createErrors.fullName && <p className="mt-1 text-xs font-medium text-rose-600">{createErrors.fullName}</p>}
+      {/* Create form */}
+      <div className="mv-card animate-fade-up" style={{ marginBottom: '1.25rem' }}>
+        <div className="mv-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, background: 'var(--mv-teal-pale)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={18} color="var(--mv-teal)" />
+            </div>
+            <p className="mv-card-title">Create Staff Account</p>
           </div>
-
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">Email Address</label>
-            <input id="email" name="email" type="email" value={createForm.email} onChange={handleCreateChange} placeholder="staff@example.com" className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
-            {createErrors.email && <p className="mt-1 text-xs font-medium text-rose-600">{createErrors.email}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="role" className="mb-1.5 block text-sm font-medium text-slate-700">Staff Role</label>
-            <select id="role" name="role" value={createForm.role} onChange={handleCreateChange} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
-              <option value="Nurse">Nurse</option>
-              <option value="Staff">Staff</option>
-            </select>
-            {createErrors.role && <p className="mt-1 text-xs font-medium text-rose-600">{createErrors.role}</p>}
-          </div>
-
-          <div className="md:col-span-2 pt-2">
-            <button type="submit" disabled={createLoading} className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-sky-400">
-              {createLoading ? 'Creating Staff...' : 'Create Staff Account'}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-900">Staff List</h2>
-          <button
-            type="button"
-            onClick={loadStaffList}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Refresh
-          </button>
         </div>
+        <div className="mv-card-body">
+          <form onSubmit={handleCreate}>
+            <div className="mv-form-row">
+              {/* Full name */}
+              <div className="mv-form-group">
+                <label className="mv-label" htmlFor="c-fullName">Full Name</label>
+                <div className="mv-input-wrap">
+                  <span className="mv-input-icon"><User size={15} /></span>
+                  <input id="c-fullName" name="fullName" type="text" value={createForm.fullName}
+                    onChange={handleCreateChange} placeholder="Staff full name"
+                    className={`mv-input${createErrors.fullName ? ' error' : ''}`} />
+                </div>
+                <FieldErr msg={createErrors.fullName} />
+              </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <label htmlFor="staffSearch" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Search</label>
-            <input
-              id="staffSearch"
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search by name or email"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-            />
+              {/* Email */}
+              <div className="mv-form-group">
+                <label className="mv-label" htmlFor="c-email">Email Address</label>
+                <div className="mv-input-wrap">
+                  <span className="mv-input-icon"><Mail size={15} /></span>
+                  <input id="c-email" name="email" type="email" value={createForm.email}
+                    onChange={handleCreateChange} placeholder="staff@hospital.com"
+                    className={`mv-input${createErrors.email ? ' error' : ''}`} />
+                </div>
+                <FieldErr msg={createErrors.email} />
+              </div>
+
+              {/* Role */}
+              <div className="mv-form-group">
+                <label className="mv-label" htmlFor="c-role">Role</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--mv-slate)', pointerEvents: 'none' }}><Shield size={15} /></span>
+                  <select id="c-role" name="role" value={createForm.role}
+                    onChange={handleCreateChange}
+                    className={`mv-select${createErrors.role ? ' error' : ''}`}
+                    style={{ paddingLeft: 42 }}>
+                    {ROLES.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </div>
+                <FieldErr msg={createErrors.role} />
+              </div>
+
+              {/* Submit */}
+              <div className="mv-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <button type="submit"
+                  className={`mv-btn mv-btn-primary mv-btn-full ${creating ? 'mv-btn-loading' : ''}`}
+                  disabled={creating}>
+                  {creating ? <><span className="mv-spinner" /><span>Creating…</span></> : <><Plus size={16} /> Create Account</>}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Staff list */}
+      <div className="mv-card animate-fade-up" style={{ animationDelay: '120ms' }}>
+        <div className="mv-card-header" style={{ flexWrap: 'wrap', gap: '0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, background: '#dbeafe', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={18} color="#2563eb" />
+            </div>
+            <div>
+              <p className="mv-card-title">Staff List</p>
+              <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 1 }}>{staffList.length} total accounts</p>
+            </div>
           </div>
-
-          <div>
-            <label htmlFor="roleFilter" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Filter by role</label>
-            <select
-              id="roleFilter"
-              value={roleFilter}
-              onChange={(event) => setRoleFilter(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
-            >
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginLeft: 'auto' }}>
+            {/* Search */}
+            <div className="mv-search" style={{ minWidth: 180 }}>
+              <span className="mv-search-icon"><Search size={14} /></span>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or email…" />
+            </div>
+            {/* Role filter */}
+            <select className="mv-select" style={{ height: 38, width: 'auto', minWidth: 120 }}
+              value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
               <option value="All">All roles</option>
-              <option value="Staff">Staff</option>
-              <option value="Nurse">Nurse</option>
+              {ROLES.map(r => <option key={r}>{r}</option>)}
             </select>
+            {/* Refresh */}
+            <button onClick={load} disabled={listLoading}
+              className="mv-btn mv-btn-ghost mv-btn-sm" style={{ gap: 6, padding: '0 12px' }}>
+              <RefreshCw size={14} className={listLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
           </div>
         </div>
 
         {listLoading ? (
-          <p className="mt-4 text-sm text-slate-600">Loading staff list...</p>
-        ) : filteredStaff.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-            No staff found
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2rem 1.5rem', color: 'var(--mv-slate)' }}>
+            <span className="mv-spinner" style={{ borderTopColor: 'var(--mv-teal)', borderColor: 'var(--mv-border)' }} /> Loading staff…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="mv-empty">
+            <div className="mv-empty-icon"><Users size={26} /></div>
+            <p className="mv-empty-title">No staff found</p>
+            <p className="mv-empty-sub">{search || roleFilter !== 'All' ? 'Try adjusting your search or filter.' : 'Create the first staff account above.'}</p>
           </div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-170 text-left">
-              <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                  <th className="px-2 py-2">Full Name</th>
-                  <th className="px-2 py-2">Email</th>
-                  <th className="px-2 py-2">Role</th>
-                  <th className="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedStaff.map((staff) => {
-                  const id = staff._id || staff.id;
-                  return (
-                    <tr key={id} className="border-b border-slate-100 last:border-none">
-                      <td className="px-2 py-3 text-sm font-medium text-slate-900">{staff.fullName}</td>
-                      <td className="px-2 py-3 text-sm text-slate-700">{staff.email}</td>
-                      <td className="px-2 py-3 text-sm"><RoleBadge role={staff.role} /></td>
-                      <td className="px-2 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(staff)}
-                            className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-200"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(staff)}
-                            className="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <>
+            <div className="mv-table-wrap">
+              <table className="mv-table">
+                <thead>
+                  <tr>
+                    <th>Staff Member</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map(s => {
+                    const id  = s._id || s.id;
+                    const ini = (s.fullName || '?').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+                    const rs  = ROLE_STYLE[s.role] || { cls: 'mv-badge-gray', label: s.role };
+                    return (
+                      <tr key={id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,var(--mv-teal),var(--mv-teal-glow))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 600, color: 'white', flexShrink: 0 }}>{ini}</div>
+                            <span style={{ fontWeight: 500, fontSize: '0.875rem', color: 'var(--mv-slate-900)' }}>{s.fullName}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: 'var(--mv-slate)' }}>{s.email}</td>
+                        <td><span className={`mv-badge ${rs.cls}`}>{rs.label}</span></td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => startEdit(s)}
+                              className="mv-btn mv-btn-ghost mv-btn-sm" style={{ gap: 5, color: 'var(--mv-warning)' }}
+                              title="Edit">
+                              <Edit2 size={13} /> Edit
+                            </button>
+                            <button onClick={() => handleDelete(s)}
+                              className="mv-btn mv-btn-ghost mv-btn-sm" style={{ gap: 5, color: 'var(--mv-danger)' }}
+                              title="Delete">
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-              <p className="text-xs text-slate-500">
-                Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredStaff.length)} of {filteredStaff.length}
+            {/* Pagination */}
+            <div style={{ padding: '0.875rem 1.375rem', borderTop: '1px solid var(--mv-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)' }}>
+                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
               </p>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Prev
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 10px' }}>
+                  <ChevronLeft size={15} />
                 </button>
-                <span className="text-xs font-medium text-slate-600">Page {currentPage} of {totalPages}</span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next
+                <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--mv-slate-dark)', padding: '0 4px' }}>
+                  {page} / {totalPages}
+                </span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 10px' }}>
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>
-          </div>
+          </>
         )}
-      </section>
+      </div>
 
+      {/* Edit modal */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-lg font-semibold text-slate-900">Edit Staff</h3>
-              <button type="button" onClick={cancelEdit} className="rounded-lg px-2 py-1 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
-                Close
+        <div className="mv-overlay">
+          <div className="mv-modal animate-scale-in" style={{ maxWidth: 480 }}>
+            <div className="mv-modal-header">
+              <p className="mv-modal-title">Edit Staff Member</p>
+              <button onClick={cancelEdit} className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 8px', border: 'none' }}>
+                <X size={18} />
               </button>
             </div>
+            <div className="mv-modal-body">
+              <form onSubmit={handleEditSubmit}>
+                <div className="mv-form-group">
+                  <label className="mv-label" htmlFor="e-fullName">Full Name</label>
+                  <div className="mv-input-wrap">
+                    <span className="mv-input-icon"><User size={15} /></span>
+                    <input id="e-fullName" name="fullName" type="text" value={editForm.fullName}
+                      onChange={handleEditChange} placeholder="Full name"
+                      className={`mv-input${editErrors.fullName ? ' error' : ''}`} />
+                  </div>
+                  <FieldErr msg={editErrors.fullName} />
+                </div>
 
-            <form className="mt-4 grid gap-4" onSubmit={handleEditSubmit}>
-              <div>
-                <label htmlFor="editFullName" className="mb-1.5 block text-sm font-medium text-slate-700">Full Name</label>
-                <input id="editFullName" name="fullName" type="text" value={editForm.fullName} onChange={handleEditChange} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
-                {editErrors.fullName && <p className="mt-1 text-xs font-medium text-rose-600">{editErrors.fullName}</p>}
-              </div>
+                <div className="mv-form-group">
+                  <label className="mv-label" htmlFor="e-email">Email Address</label>
+                  <div className="mv-input-wrap">
+                    <span className="mv-input-icon"><Mail size={15} /></span>
+                    <input id="e-email" name="email" type="email" value={editForm.email}
+                      onChange={handleEditChange} placeholder="email@example.com"
+                      className={`mv-input${editErrors.email ? ' error' : ''}`} />
+                  </div>
+                  <FieldErr msg={editErrors.email} />
+                </div>
 
-              <div>
-                <label htmlFor="editEmail" className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                <input id="editEmail" name="email" type="email" value={editForm.email} onChange={handleEditChange} className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
-                {editErrors.email && <p className="mt-1 text-xs font-medium text-rose-600">{editErrors.email}</p>}
-              </div>
+                <div className="mv-form-group">
+                  <label className="mv-label" htmlFor="e-role">Role</label>
+                  <select id="e-role" name="role" value={editForm.role}
+                    onChange={handleEditChange} className="mv-select">
+                    {ROLES.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                  <FieldErr msg={editErrors.role} />
+                </div>
 
-              <div>
-                <label htmlFor="editRole" className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
-                <select id="editRole" name="role" value={editForm.role} onChange={handleEditChange} className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200">
-                  <option value="Nurse">Nurse</option>
-                  <option value="Staff">Staff</option>
-                </select>
-                {editErrors.role && <p className="mt-1 text-xs font-medium text-rose-600">{editErrors.role}</p>}
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button type="submit" disabled={editLoading} className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-sky-400">
-                  {editLoading ? 'Updating...' : 'Save Changes'}
-                </button>
-                <button type="button" onClick={cancelEdit} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                  Cancel
-                </button>
-              </div>
-            </form>
+                <div className="mv-modal-footer" style={{ padding: '0', paddingTop: '0.5rem' }}>
+                  <button type="button" onClick={cancelEdit} className="mv-btn mv-btn-ghost" style={{ flex: 1 }}>Cancel</button>
+                  <button type="submit"
+                    className={`mv-btn mv-btn-primary ${editLoading ? 'mv-btn-loading' : ''}`}
+                    disabled={editLoading} style={{ flex: 1 }}>
+                    {editLoading ? <><span className="mv-spinner" /><span>Saving…</span></> : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

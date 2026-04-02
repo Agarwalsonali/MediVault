@@ -52,6 +52,8 @@ function initials(name) {
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate   = useNavigate();
   const location   = useLocation();
   const role       = getRole();
@@ -61,7 +63,10 @@ export default function DashboardLayout() {
   const userInitials = initials(user?.fullName || user?.name);
 
   /* Close sidebar on route change */
-  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setSidebarOpen(false);
+    setNotificationsOpen(false);
+  }, [location.pathname]);
 
   /* Lock body scroll when mobile sidebar open */
   useEffect(() => {
@@ -72,6 +77,15 @@ export default function DashboardLayout() {
   async function handleLogout() {
     await logout();                              // uses authService.logout()
     navigate('/login');
+  }
+
+  function handleSidebarToggle() {
+    const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+    if (isMobile) {
+      setSidebarOpen((prev) => !prev);
+    } else {
+      setSidebarCollapsed((prev) => !prev);
+    }
   }
 
   const profilePath =
@@ -88,7 +102,7 @@ export default function DashboardLayout() {
       />
 
       {/* ── SIDEBAR ── */}
-      <aside className={`dash-sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Main navigation">
+      <aside className={`dash-sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Main navigation">
 
         {/* Brand */}
         <div className="dash-sidebar-brand">
@@ -97,12 +111,12 @@ export default function DashboardLayout() {
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
             </svg>
           </div>
-          <span className="dash-sidebar-brand-name">MediVault</span>
+          {!sidebarCollapsed && <span className="dash-sidebar-brand-name">MediVault</span>}
         </div>
 
         {/* Nav items */}
         <div className="dash-sidebar-section" style={{ flex: 1 }}>
-          <p className="dash-sidebar-section-label">Menu</p>
+          {!sidebarCollapsed && <p className="dash-sidebar-section-label">Menu</p>}
           <nav>
             {navItems.map(({ to, icon: Icon, label, end }) => (
               <NavLink
@@ -110,9 +124,11 @@ export default function DashboardLayout() {
                 to={to}
                 end={end}
                 className={({ isActive }) => `dash-nav-item ${isActive ? 'active' : ''}`}
+                title={sidebarCollapsed ? label : undefined}
+                style={sidebarCollapsed ? { justifyContent: 'center', padding: '10px 0' } : {}}
               >
                 <Icon size={18} />
-                <span>{label}</span>
+                {!sidebarCollapsed && <span>{label}</span>}
               </NavLink>
             ))}
           </nav>
@@ -122,10 +138,12 @@ export default function DashboardLayout() {
         <div className="dash-sidebar-user">
           <div className="dash-sidebar-user-card" onClick={() => navigate(profilePath)} role="button" tabIndex={0}>
             <div className="dash-user-avatar">{userInitials}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="dash-user-name">{user?.fullName || user?.name || 'User'}</div>
-              <div className="dash-user-role">{role}</div>
-            </div>
+            {!sidebarCollapsed && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="dash-user-name">{user?.fullName || user?.name || 'User'}</div>
+                <div className="dash-user-role">{role}</div>
+              </div>
+            )}
           </div>
 
           <button
@@ -141,15 +159,15 @@ export default function DashboardLayout() {
       </aside>
 
       {/* ── MAIN ── */}
-      <div className="dash-main">
+      <div className={`dash-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
 
         {/* Topbar */}
         <header className="dash-topbar">
           <button
             className="dash-topbar-hamburger"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={sidebarOpen}
+            onClick={handleSidebarToggle}
+            aria-label="Toggle menu"
+            aria-expanded={sidebarOpen || !sidebarCollapsed}
           >
             <Menu size={20} />
           </button>
@@ -157,14 +175,29 @@ export default function DashboardLayout() {
           <h1 className="dash-topbar-title">{pageTitle}</h1>
 
           <div className="dash-topbar-actions">
-            <button className="dash-topbar-btn" aria-label="Notifications" style={{ position: 'relative' }}>
-              <Bell size={17} />
-              <span style={{
-                position: 'absolute', top: 7, right: 7,
-                width: 7, height: 7, borderRadius: '50%',
-                background: 'var(--mv-danger)', border: '1.5px solid white'
-              }} />
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="dash-topbar-btn"
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+                onClick={() => setNotificationsOpen((prev) => !prev)}
+                style={{ position: 'relative' }}
+              >
+                <Bell size={17} />
+                <span style={{
+                  position: 'absolute', top: 7, right: 7,
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: 'var(--mv-danger)', border: '1.5px solid white'
+                }} />
+              </button>
+
+              {notificationsOpen && (
+                <div className="dash-notification-popover">
+                  <div className="dash-notification-title">Notifications</div>
+                  <div className="dash-notification-item">No new notifications</div>
+                </div>
+              )}
+            </div>
 
             <div
               className="dash-topbar-avatar"
