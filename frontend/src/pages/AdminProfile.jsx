@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchMyProfile, updateMyProfile, uploadMyProfileImage, removeMyProfileImage } from '../services/userService.js';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle, Shield, Edit3, Camera } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const INIT = { fullName: '', email: '', newPassword: '', confirmPassword: '' };
 
@@ -9,8 +10,6 @@ export default function AdminProfile() {
   const [errors,  setErrors]  = useState({});
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
-  const [success, setSuccess] = useState('');
-  const [errMsg,  setErrMsg]  = useState('');
   const [showNew, setShowNew] = useState(false);
   const [showCon, setShowCon] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -25,7 +24,7 @@ export default function AdminProfile() {
         setForm(p => ({ ...p, fullName: data?.user?.fullName || '', email: data?.user?.email || '' }));
         setAvatarUrl(data?.user?.avatarUrl || '');
       } catch (e) {
-        setErrMsg(e.message || 'Failed to load profile');
+        toast.error(e.message || 'Failed to load profile');
       } finally { setLoading(false); }
     })();
   }, []);
@@ -34,7 +33,6 @@ export default function AdminProfile() {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
     setErrors(p => ({ ...p, [name]: '' }));
-    setSuccess(''); setErrMsg('');
   };
 
   const validate = () => {
@@ -50,18 +48,18 @@ export default function AdminProfile() {
     e.preventDefault();
     const ve = validate();
     if (Object.keys(ve).length) { setErrors(ve); return; }
-    setSaving(true); setSuccess(''); setErrMsg('');
+    setSaving(true); setErrMsg('');
     try {
       const res = await updateMyProfile({
         fullName: form.fullName.trim(),
         email:    form.email.trim().toLowerCase(),
         password: form.newPassword,
       });
-      setSuccess(res?.message || 'Profile updated successfully.');
+      toast.success(res?.message || 'Profile updated successfully.');
       setForm(p => ({ ...p, newPassword: '', confirmPassword: '' }));
       setEditing(false);
     } catch (e) {
-      setErrMsg(e.message || 'Failed to update profile.');
+      toast.error(e.message || 'Failed to update profile.');
     } finally { setSaving(false); }
   };
 
@@ -74,21 +72,20 @@ export default function AdminProfile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrMsg('Please select a valid image file.');
+      toast.error('Please select a valid image file.');
       e.target.value = '';
       return;
     }
 
     setUploadingImage(true);
     setErrMsg('');
-    setSuccess('');
 
     try {
       const res = await uploadMyProfileImage(file);
       setAvatarUrl(res?.avatarUrl || res?.user?.avatarUrl || '');
-      setSuccess(res?.message || 'Profile image updated successfully.');
+      toast.success(res?.message || 'Profile image updated successfully.');
     } catch (error) {
-      setErrMsg(error.message || 'Failed to upload profile image.');
+      toast.error(error.message || 'Failed to upload profile image.');
     } finally {
       setUploadingImage(false);
       e.target.value = '';
@@ -100,14 +97,13 @@ export default function AdminProfile() {
 
     setUploadingImage(true);
     setErrMsg('');
-    setSuccess('');
 
     try {
       const res = await removeMyProfileImage();
       setAvatarUrl(res?.avatarUrl || res?.user?.avatarUrl || '');
-      setSuccess(res?.message || 'Profile image removed successfully.');
+      toast.success(res?.message || 'Profile image removed successfully.');
     } catch (error) {
-      setErrMsg(error.message || 'Failed to remove profile image.');
+      toast.error(error.message || 'Failed to remove profile image.');
     } finally {
       setUploadingImage(false);
     }
@@ -219,18 +215,6 @@ export default function AdminProfile() {
               )}
             </div>
             <div className="mv-card-body">
-              {success && (
-                <div className="mv-alert mv-alert-success animate-fade-in" style={{ marginBottom: '1.125rem' }}>
-                  <CheckCircle size={15} /><span>{success}</span>
-                </div>
-              )}
-              {errMsg && (
-                <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.125rem' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  <span>{errMsg}</span>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit}>
                 {/* Full name */}
                 <div className="mv-form-group">

@@ -49,30 +49,70 @@ function emailShell({ preheader = '', body = '' }) {
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background-color: #f1f5f9; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    img { max-width: 100%; height: auto; }
     .email-body { background: #f1f5f9; padding: 40px 16px; }
     .container { max-width: 560px; margin: 0 auto; }
-    .card { background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(10,22,40,0.08); }
+    .card { background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(10,22,40,0.08); width: 100%; }
     .header { background: #0a1628; padding: 28px 32px; }
-    .header-inner { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, #0d9488, #2dd4bf); border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
-    .logo-text { font-size: 20px; font-weight: 600; color: #ffffff; letter-spacing: -0.3px; }
+    .header-inner { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0d9488, #2dd4bf);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      box-shadow: 0 0 18px rgba(13,148,136,0.25);
+    }
+    .logo-text { font-size: 21px; font-weight: 600; color: #ffffff; letter-spacing: -0.3px; }
     .content { padding: 36px 32px 28px; }
-    .icon-wrap { width: 64px; height: 64px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
     .email-title { font-size: 22px; font-weight: 600; color: #0a1628; text-align: center; margin-bottom: 10px; letter-spacing: -0.3px; }
     .email-sub { font-size: 14.5px; color: #64748b; text-align: center; line-height: 1.65; margin-bottom: 28px; }
+    .otp-wrap { margin: 28px 0 14px; text-align: center; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .otp-table { margin: 0 auto; border-collapse: separate; border-spacing: 0; }
+    .otp-cell { padding: 0 4px; }
+    .otp-digit {
+      width: 48px;
+      height: 60px;
+      background: #f0fdfa;
+      border: 2px solid #0d9488;
+      border-radius: 10px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #0a1628;
+      text-align: center;
+      line-height: 56px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0;
+      display: block;
+    }
     .divider { height: 1px; background: #e2e8f0; margin: 24px 0; }
     .footer { padding: 20px 32px 28px; text-align: center; }
     .footer-text { font-size: 12px; color: #94a3b8; line-height: 1.7; }
     .footer-links { margin-top: 12px; }
     .footer-links a { color: #64748b; text-decoration: none; font-size: 12px; margin: 0 8px; }
     @media (max-width: 600px) {
-      .content { padding: 28px 20px 20px; }
-      .header { padding: 22px 20px; }
-      .footer { padding: 16px 20px 24px; }
+      .email-body { padding: 22px 10px; }
+      .container { max-width: 100%; }
+      .card { border-radius: 14px; }
+      .content { padding: 24px 16px 20px; }
+      .header { padding: 18px 14px; }
+      .header-inner { gap: 8px; }
+      .logo-icon { width: 30px; height: 30px; border-radius: 8px; }
+      .logo-icon svg { width: 16px; height: 16px; }
+      .logo-text { font-size: 18px; }
+      .footer { padding: 16px 16px 22px; }
+      .email-title { font-size: 20px; }
+      .email-sub { font-size: 13.5px; margin-bottom: 22px; }
+      .otp-wrap { margin: 22px 0 12px; }
+      .otp-cell { padding: 0 3px; }
+      .otp-digit { width: 40px; height: 52px; font-size: 24px; line-height: 48px; border-radius: 9px; }
+      .footer-links a { display: inline-block; margin: 0 6px 6px; }
     }
   </style>
 </head>
-<body>
   <!-- Preheader (hidden preview text) -->
   <span style="display:none;font-size:1px;color:#f1f5f9;max-height:0;max-width:0;opacity:0;overflow:hidden;">
     ${preheader}
@@ -85,11 +125,11 @@ function emailShell({ preheader = '', body = '' }) {
         <!-- Header -->
         <div class="header">
           <div class="header-inner">
-            <div class="logo-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            <span class="logo-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12h4l2-5 4 10 2-5h4"/>
               </svg>
-            </div>
+            </span>
             <span class="logo-text">MediVault</span>
           </div>
         </div>
@@ -129,24 +169,11 @@ function emailShell({ preheader = '', body = '' }) {
 ───────────────────────────────────────── */
 function otpDigitBoxes(otp) {
   return `
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="otp-table">
       <tr>
         ${String(otp).split('').map(digit => `
-          <td style="padding: 0 4px;">
-            <div style="
-              width: 48px;
-              height: 60px;
-              background: #f0fdfa;
-              border: 2px solid #0d9488;
-              border-radius: 10px;
-              font-size: 28px;
-              font-weight: 700;
-              color: #0a1628;
-              text-align: center;
-              line-height: 60px;
-              font-family: 'Courier New', monospace;
-              letter-spacing: 0;
-            ">${digit}</div>
+          <td class="otp-cell">
+            <span class="otp-digit">${digit}</span>
           </td>
         `).join('')}
       </tr>
@@ -164,13 +191,6 @@ export const sendVerificationOtpEmail = async (email, otp) => {
   const html = emailShell({
     preheader: `Your verification code is ${otp} — expires in 10 minutes`,
     body: `
-      <div class="icon-wrap" style="background: #f0fdfa;">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
-      </div>
-
       <h1 class="email-title">Verify your email address</h1>
       <p class="email-sub">
         Enter this code in MediVault to verify your account.<br/>
@@ -178,7 +198,7 @@ export const sendVerificationOtpEmail = async (email, otp) => {
       </p>
 
       <!-- OTP Digit Boxes -->
-      <div style="margin: 28px 0; text-align: center;">
+      <div class="otp-wrap">
         ${otpDigitBoxes(otp)}
       </div>
 
@@ -215,12 +235,6 @@ export const sendLoginOtpEmail = async (email, otp) => {
   const html = emailShell({
     preheader: `Your login code is ${otp} — expires in 5 minutes`,
     body: `
-      <div class="icon-wrap" style="background: #ede9fe;">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      </div>
-
       <h1 class="email-title">Your login verification code</h1>
       <p class="email-sub">
         Use this code to complete your sign-in to MediVault.<br/>
@@ -228,20 +242,17 @@ export const sendLoginOtpEmail = async (email, otp) => {
       </p>
 
       <!-- OTP Digit Boxes -->
-      <div style="margin: 28px 0; text-align: center;">
+      <div class="otp-wrap">
         ${otpDigitBoxes(otp)}
       </div>
 
       <div class="divider"></div>
 
       <!-- Time warning -->
-      <div style="display:flex; align-items:flex-start; gap:10px; background:#fef3c7; border-radius:10px; padding:14px 16px; border-left:3px solid #d97706;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
+      <div style="background:#fff7ed; border-radius:10px; padding:14px 16px; border-left:3px solid #d97706;">
         <p style="font-size:13px; color:#92400e; line-height:1.6; margin:0;">
-          If you did not attempt to log in, your account may be at risk. 
-          <a href="#" style="color:#b45309; font-weight:600;">Secure your account →</a>
+          If you did not attempt to log in, your account may be at risk.<br/>
+          <a href="#" style="color:#b45309; font-weight:700; text-decoration:none; display:inline-block; margin-top:4px;">Secure your account →</a>
         </p>
       </div>
 
@@ -264,13 +275,6 @@ export const sendPasswordResetOtpEmail = async (email, otp) => {
   const html = emailShell({
     preheader: `Reset code: ${otp} — valid for 5 minutes`,
     body: `
-      <div class="icon-wrap" style="background: #fee2e2;">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-      </div>
-
       <h1 class="email-title">Password reset request</h1>
       <p class="email-sub">
         We received a request to reset the password for your MediVault account.<br/>
@@ -278,7 +282,7 @@ export const sendPasswordResetOtpEmail = async (email, otp) => {
       </p>
 
       <!-- OTP Digit Boxes -->
-      <div style="margin: 28px 0; text-align: center;">
+      <div class="otp-wrap">
         ${otpDigitBoxes(otp)}
       </div>
 

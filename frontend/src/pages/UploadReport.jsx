@@ -1,22 +1,21 @@
 import { useState, useRef } from 'react';
 import Input from '../components/Input.jsx';
-import { Upload, FileText, X, CheckCircle, Lock } from 'lucide-react';
+import { Upload, FileText, X, Lock } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function UploadReport() {
   const [patientName, setPatientName] = useState('');
   const [reportType,  setReportType]  = useState('');
   const [file,        setFile]        = useState(null);
   const [dragover,    setDragover]    = useState(false);
-  const [message,     setMessage]     = useState('');
-  const [isError,     setIsError]     = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
   const fileRef = useRef();
 
   const handleFile = (f) => {
     if (!f) return;
     const ok = ['application/pdf','image/png','image/jpeg'].includes(f.type);
-    if (!ok) { setIsError(true); setMessage('Invalid file type. Please use PDF, PNG or JPG.'); return; }
-    setFile(f); setMessage(''); setIsError(false);
+    if (!ok) { toast.error('Invalid file type. Please use PDF, PNG or JPG.'); return; }
+    setFile(f);
   };
 
   const handleDrop = (e) => {
@@ -25,16 +24,15 @@ export default function UploadReport() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setMessage(''); setIsError(false);
-    if (!patientName.trim()) { setIsError(true); setMessage('Please enter a patient name.'); return; }
-    if (!reportType.trim())  { setIsError(true); setMessage('Please select a report type.'); return; }
-    if (!file)               { setIsError(true); setMessage('Please choose a file to upload.'); return; }
+    e.preventDefault();
+    if (!patientName.trim()) { toast.error('Please enter a patient name.'); return; }
+    if (!reportType.trim())  { toast.error('Please select a report type.'); return; }
+    if (!file)               { toast.error('Please choose a file to upload.'); return; }
 
     setSubmitting(true);
     try {
       await new Promise(r => setTimeout(r, 800));
-      setMessage(`Report "${file.name}" uploaded successfully!`);
-      setIsError(false);
+      toast.success(`Report "${file.name}" uploaded successfully!`);
       setFile(null); setPatientName(''); setReportType('');
     } finally { setSubmitting(false); }
   };
@@ -67,16 +65,6 @@ export default function UploadReport() {
           </div>
 
           <div className="mv-card-body">
-            {message && (
-              <div className={`mv-alert ${isError ? 'mv-alert-error' : 'mv-alert-success'} animate-fade-in`} style={{ marginBottom: '1.25rem' }}>
-                {isError
-                  ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  : <CheckCircle size={15} />
-                }
-                <span>{message}</span>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit}>
               <div className="mv-form-row">
                 <Input label="Patient Name" name="patientName" value={patientName}

@@ -8,6 +8,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 dotenv.config();
 
@@ -38,5 +39,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

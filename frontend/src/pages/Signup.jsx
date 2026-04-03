@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Activity } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { registerUser, getVerifyEmail } from '../services/authService.js';
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from '../utils/passwordValidator.js';
 
@@ -9,13 +10,11 @@ export default function Signup() {
   const [showPass, setShowPass]   = useState(false);
   const [showConf, setShowConf]   = useState(false);
   const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    if (error) setError('');
     
     // Real-time password validation
     if (e.target.name === 'password') {
@@ -26,21 +25,22 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return; }
+    if (form.password !== form.confirmPassword) { toast.error('Passwords do not match.'); return; }
     
     const validation = validatePassword(form.password);
     if (!validation.isValid) { 
-      setError(validation.errors[0] || 'Password does not meet requirements.');
+      toast.error(validation.errors[0] || 'Password does not meet requirements.');
       return; 
     }
     
-    setLoading(true); setError('');
+    setLoading(true);
     try {
       await registerUser({ fullName: form.fullName, email: form.email, password: form.password });
       // authService.registerUser stores email via setVerifyEmail internally
+      toast.success('Registration successful. Check your email to verify your account.');
       navigate('/verify-email', { state: { email: form.email } });
     } catch (err) {
-      setError(err?.message || 'Registration failed. Please try again.');
+      toast.error(err?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -89,13 +89,6 @@ export default function Signup() {
             <p className="auth-form-subtitle">Get started with MediVault — it's free</p>
           </div>
 
-          {error && (
-            <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} noValidate>
             {/* Full name */}
             <div className="mv-form-group">
@@ -103,7 +96,7 @@ export default function Signup() {
               <div className="mv-input-wrap">
                 <span className="mv-input-icon"><User size={16} /></span>
                 <input id="fullName" name="fullName" type="text" autoComplete="name" required
-                  placeholder="John Smith" className="mv-input"
+                  placeholder="Your Name" className="mv-input"
                   value={form.fullName} onChange={handleChange} />
               </div>
             </div>

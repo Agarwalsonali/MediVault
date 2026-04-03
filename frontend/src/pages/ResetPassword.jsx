@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Activity } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { resetPassword, getResetEmail } from '../services/authService.js';
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from '../utils/passwordValidator.js';
 
@@ -12,7 +13,6 @@ export default function ResetPassword() {
   const [confirm, setConfirm]   = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
   const refs = useRef([]);
   const navigate = useNavigate();
@@ -59,21 +59,22 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (otp.length < LEN)     { setError('Enter the full 6-digit OTP.'); return; }
-    if (password !== confirm)  { setError('Passwords do not match.'); return; }
+    if (otp.length < LEN)     { toast.error('Enter the full 6-digit OTP.'); return; }
+    if (password !== confirm)  { toast.error('Passwords do not match.'); return; }
     
     const validation = validatePassword(password);
     if (!validation.isValid) { 
-      setError(validation.errors[0] || 'Password does not meet requirements.'); 
+      toast.error(validation.errors[0] || 'Password does not meet requirements.'); 
       return; 
     }
     
-    setLoading(true); setError('');
+    setLoading(true);
     try {
       await resetPassword({ email, otp, newPassword: password }); // authService.resetPassword
+      toast.success('Password reset successful.');
       navigate('/login', { state: { passwordReset: true } });
     } catch (err) {
-      setError(err?.message || 'Reset failed. The code may have expired.');
+      toast.error(err?.message || 'Reset failed. The code may have expired.');
     } finally { setLoading(false); }
   };
 
@@ -92,13 +93,6 @@ export default function ResetPassword() {
               Enter the code sent to <strong style={{ color: 'var(--mv-slate-dark)' }}>{email}</strong><br />and choose a new password.
             </p>
           </div>
-
-          {error && (
-            <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit}>
             {/* OTP */}

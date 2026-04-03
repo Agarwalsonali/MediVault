@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import VerifyOTP from './pages/VerifyOTP.jsx';
@@ -192,6 +194,15 @@ function App() {
           {/* Catch-all: redirect unknown routes */}
           <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardPathByRole(role) : '/'} replace />} />
         </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          newestOnTop
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme="dark"
+        />
       </SessionTimeoutManager>
     </BrowserRouter>
   );

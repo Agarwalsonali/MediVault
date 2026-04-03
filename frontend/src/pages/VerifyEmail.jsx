@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, RotateCcw, CheckCircle, Activity } from 'lucide-react';
+import { Mail, RotateCcw, Activity } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { verifyEmail, resendVerificationOtp, getVerifyEmail } from '../services/authService.js';
 
 const LEN = 6;
@@ -9,8 +10,6 @@ export default function VerifyEmail() {
   const [digits, setDigits]     = useState(Array(LEN).fill(''));
   const [loading, setLoading]   = useState(false);
   const [resending, setResending] = useState(false);
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
   const [cooldown, setCooldown] = useState(60);
   const refs = useRef([]);
   const navigate = useNavigate();
@@ -30,7 +29,6 @@ export default function VerifyEmail() {
   const handleChange = (i, val) => {
     const ch = val.replace(/\D/g, '').slice(-1);
     const next = [...digits]; next[i] = ch; setDigits(next);
-    if (error) setError('');
     if (ch && i < LEN - 1) refs.current[i + 1]?.focus();
   };
 
@@ -56,13 +54,14 @@ export default function VerifyEmail() {
   const otp = digits.join('');
 
   const submit = async () => {
-    if (otp.length < LEN) { setError('Please enter all 6 digits.'); return; }
-    setLoading(true); setError('');
+    if (otp.length < LEN) { toast.error('Please enter all 6 digits.'); return; }
+    setLoading(true);
     try {
       await verifyEmail({ email, otp });          // authService.verifyEmail
+      toast.success('Email verified successfully.');
       navigate('/login', { state: { verified: true } });
     } catch (err) {
-      setError(err?.message || 'Invalid or expired code. Please try again.');
+      toast.error(err?.message || 'Invalid or expired code. Please try again.');
       setDigits(Array(LEN).fill(''));
       refs.current[0]?.focus();
     } finally { setLoading(false); }
@@ -71,13 +70,13 @@ export default function VerifyEmail() {
   useEffect(() => { if (otp.length === LEN && !loading) submit(); }, [otp]);
 
   const handleResend = async () => {
-    setResending(true); setError(''); setSuccess('');
+    setResending(true);
     try {
       await resendVerificationOtp({ email });      // authService.resendVerificationOtp
-      setSuccess('A new code has been sent to your email.');
+      toast.success('A new code has been sent to your email.');
       setCooldown(60);
     } catch (err) {
-      setError(err?.message || 'Could not resend. Please try again.');
+      toast.error(err?.message || 'Could not resend. Please try again.');
     } finally { setResending(false); }
   };
 
@@ -97,18 +96,6 @@ export default function VerifyEmail() {
               <strong style={{ color: 'var(--mv-slate-dark)' }}>{email}</strong>
             </p>
           </div>
-
-          {error && (
-            <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
-          {success && (
-            <div className="mv-alert mv-alert-success animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <CheckCircle size={15} /><span>{success}</span>
-            </div>
-          )}
 
           <div className="otp-grid" onPaste={handlePaste} style={{ marginBottom: '1.75rem' }}>
             {digits.map((d, i) => (

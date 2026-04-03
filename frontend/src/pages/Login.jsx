@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, Activity } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { loginUser, getDashboardPathByRole, getLoginEmail } from '../services/authService.js';
 
 export default function Login() {
@@ -17,19 +18,21 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); setLoading(true);
+    setLoading(true);
     try {
       const result = await loginUser({ email: form.email, password: form.password });
 
       if (result?.twoFactorRequired) {
         // OTP step required — navigate with stored email
+        toast.success('Login code sent to your email.');
         navigate('/verify-otp', { state: { email: form.email.trim().toLowerCase() } });
       } else {
         // Direct login (no 2FA) — go to dashboard
+        toast.success('Signed in successfully.');
         navigate(getDashboardPathByRole(result?.role));
       }
     } catch (err) {
-      setError(err?.message || 'Invalid email or password. Please try again.');
+      toast.error(err?.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -85,13 +88,6 @@ export default function Login() {
             <h1 className="auth-form-title">Welcome back</h1>
             <p className="auth-form-subtitle">Sign in to your MediVault account</p>
           </div>
-
-          {error && (
-            <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} noValidate>
             {/* Email */}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, RotateCcw, Activity } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { verifyOtp, getDashboardPathByRole, getLoginEmail } from '../services/authService.js';
 
 const LEN = 6;
@@ -8,7 +9,6 @@ const LEN = 6;
 export default function VerifyOTP() {
   const [digits, setDigits]     = useState(Array(LEN).fill(''));
   const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
   const [cooldown, setCooldown] = useState(30);
   const refs   = useRef([]);
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ export default function VerifyOTP() {
   const handleChange = (i, val) => {
     const ch = val.replace(/\D/g, '').slice(-1);
     const next = [...digits]; next[i] = ch; setDigits(next);
-    if (error) setError('');
     if (ch && i < LEN - 1) refs.current[i + 1]?.focus();
   };
 
@@ -54,13 +53,14 @@ export default function VerifyOTP() {
   const otp = digits.join('');
 
   const submit = async () => {
-    if (otp.length < LEN) { setError('Please enter all 6 digits.'); return; }
-    setLoading(true); setError('');
+    if (otp.length < LEN) { toast.error('Please enter all 6 digits.'); return; }
+    setLoading(true);
     try {
       const result = await verifyOtp({ email, otp });
+      toast.success('Login verified successfully.');
       navigate(getDashboardPathByRole(result?.role));
     } catch (err) {
-      setError(err?.message || 'Invalid OTP. Please try again.');
+      toast.error(err?.message || 'Invalid OTP. Please try again.');
       setDigits(Array(LEN).fill(''));
       refs.current[0]?.focus();
     } finally { setLoading(false); }
@@ -88,13 +88,6 @@ export default function VerifyOTP() {
               <strong style={{ color: 'var(--mv-slate-dark)' }}>{email || 'your email'}</strong>
             </p>
           </div>
-
-          {error && (
-            <div className="mv-alert mv-alert-error animate-fade-in" style={{ marginBottom: '1.25rem' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>{error}</span>
-            </div>
-          )}
 
           {/* OTP digits */}
           <div className="otp-grid" onPaste={handlePaste} style={{ marginBottom: '1.75rem' }}>

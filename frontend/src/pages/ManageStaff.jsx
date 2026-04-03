@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createStaffUser, deleteStaffUser, fetchStaffUsers, updateStaffUser } from '../services/adminService.js';
-import { Users, Search, RefreshCw, Plus, Edit2, Trash2, X, CheckCircle, ChevronLeft, ChevronRight, User, Mail, Shield } from 'lucide-react';
+import { Users, Search, RefreshCw, Plus, Edit2, Trash2, X, ChevronLeft, ChevronRight, User, Mail, Shield } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const ROLES = ['Nurse', 'Staff'];
 const INIT_CREATE = { fullName: '', email: '', role: 'Nurse' };
@@ -11,19 +12,6 @@ const ROLE_STYLE = {
   Staff: { cls: 'mv-badge-blue',   label: 'Staff' },
   Doctor:{ cls: 'mv-badge-purple', label: 'Doctor' },
 };
-
-function Alert({ type, message }) {
-  if (!message) return null;
-  return (
-    <div className={`mv-alert ${type === 'error' ? 'mv-alert-error' : 'mv-alert-success'} animate-fade-in`}>
-      {type === 'error'
-        ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        : <CheckCircle size={15} />
-      }
-      <span>{message}</span>
-    </div>
-  );
-}
 
 function FieldErr({ msg }) {
   if (!msg) return null;
@@ -49,8 +37,7 @@ export default function ManageStaff() {
   const [editForm,     setEditForm]     = useState(INIT_EDIT);
   const [editErrors,   setEditErrors]   = useState({});
   const [editLoading,  setEditLoading]  = useState(false);
-  const [successMsg,   setSuccessMsg]   = useState('');
-  const [errorMsg,     setErrorMsg]     = useState('');
+  const [, setErrorMsg]     = useState('');
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -68,7 +55,7 @@ export default function ManageStaff() {
     try {
       const res = await fetchStaffUsers();
       setStaffList(res?.staff || []);
-    } catch (e) { setErrorMsg(e.message || 'Failed to load staff.'); }
+    } catch (e) { toast.error(e.message || 'Failed to load staff.'); }
     finally { setListLoading(false); }
   };
 
@@ -97,33 +84,33 @@ export default function ManageStaff() {
     const { name, value } = e.target;
     setCreateForm(p => ({ ...p, [name]: value }));
     setCreateErrors(p => ({ ...p, [name]: '' }));
-    setSuccessMsg(''); setErrorMsg('');
+    setErrorMsg('');
   };
   const handleEditChange = e => {
     const { name, value } = e.target;
     setEditForm(p => ({ ...p, [name]: value }));
     setEditErrors(p => ({ ...p, [name]: '' }));
-    setSuccessMsg(''); setErrorMsg('');
+    setErrorMsg('');
   };
 
   const handleCreate = async e => {
     e.preventDefault();
     const ve = validateCreate();
     if (Object.keys(ve).length) { setCreateErrors(ve); return; }
-    setCreating(true); setSuccessMsg(''); setErrorMsg('');
+    setCreating(true); setErrorMsg('');
     try {
       await createStaffUser({ fullName: createForm.fullName.trim(), email: createForm.email.trim().toLowerCase(), role: createForm.role });
-      setSuccessMsg('Staff account created. Invite email sent.');
+      toast.success('Staff account created. Invite email sent.');
       setCreateForm(INIT_CREATE); setCreateErrors({});
       await load();
-    } catch (e) { setErrorMsg(e.message || 'Could not create account.'); }
+    } catch (e) { toast.error(e.message || 'Could not create account.'); }
     finally { setCreating(false); }
   };
 
   const startEdit = s => {
     setIsEditing(true);
     setEditForm({ id: s._id || s.id, fullName: s.fullName || '', email: s.email || '', role: s.role || 'Nurse' });
-    setEditErrors({}); setSuccessMsg(''); setErrorMsg('');
+    setEditErrors({}); setErrorMsg('');
   };
   const cancelEdit = () => { setIsEditing(false); setEditForm(INIT_EDIT); setEditErrors({}); };
 
@@ -131,27 +118,24 @@ export default function ManageStaff() {
     e.preventDefault();
     const ve = validateEdit();
     if (Object.keys(ve).length) { setEditErrors(ve); return; }
-    setEditLoading(true); setSuccessMsg(''); setErrorMsg('');
+    setEditLoading(true); setErrorMsg('');
     try {
       await updateStaffUser(editForm.id, { fullName: editForm.fullName.trim(), email: editForm.email.trim().toLowerCase(), role: editForm.role });
-      setSuccessMsg('Staff updated successfully.');
+      toast.success('Staff updated successfully.');
       cancelEdit(); await load();
-    } catch (e) { setErrorMsg(e.message || 'Could not update account.'); }
+    } catch (e) { toast.error(e.message || 'Could not update account.'); }
     finally { setEditLoading(false); }
   };
 
   const handleDelete = async s => {
     if (!window.confirm(`Delete ${s.fullName} (${s.role})?`)) return;
-    setSuccessMsg(''); setErrorMsg('');
+    setErrorMsg('');
     try {
       await deleteStaffUser(s._id || s.id);
-      setSuccessMsg('Staff deleted successfully.');
+      toast.success('Staff deleted successfully.');
       await load();
-    } catch (e) { setErrorMsg(e.message || 'Could not delete account.'); }
+    } catch (e) { toast.error(e.message || 'Could not delete account.'); }
   };
-
-  /* Shared field style */
-  const inp = (err) => ({ className: `mv-input${err ? ' error' : ''}` });
 
   return (
     <div className="dash-page">
@@ -159,13 +143,6 @@ export default function ManageStaff() {
         <h1 className="dash-page-title">Manage Staff</h1>
         <p className="dash-page-subtitle">Create, invite, update and remove Nurse or Staff accounts</p>
       </div>
-
-      {/* Global alerts */}
-      {(successMsg || errorMsg) && (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <Alert type={errorMsg ? 'error' : 'success'} message={errorMsg || successMsg} />
-        </div>
-      )}
 
       {/* Create form */}
       <div className="mv-card animate-fade-up" style={{ marginBottom: '1.25rem' }}>
