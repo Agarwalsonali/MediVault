@@ -502,6 +502,189 @@ export default function Home() {
         }
         .mv-feature-card:hover .mv-card-glow { opacity: 0.25; }
 
+        /* ── Contact section ── */
+        .mv-contact-section {
+          padding: 0 clamp(1.5rem, 5vw, 5rem) 90px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .mv-contact-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.15fr;
+          gap: 20px;
+          align-items: start;
+        }
+
+        .mv-contact-card,
+        .mv-contact-form {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          box-shadow: 0 8px 26px rgba(15, 32, 64, 0.08);
+        }
+
+        .mv-contact-card {
+          padding: 18px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .mv-contact-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(15, 32, 64, 0.09);
+        }
+
+        .mv-contact-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--teal);
+          background: rgba(0, 194, 168, 0.12);
+          flex-shrink: 0;
+        }
+
+        .mv-contact-item p {
+          margin: 0;
+        }
+
+        .mv-contact-item .label {
+          font-size: 0.73rem;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--muted);
+          margin-bottom: 2px;
+        }
+
+        .mv-contact-item .value {
+          font-size: 0.96rem;
+          font-weight: 600;
+          color: var(--text);
+        }
+
+        .mv-contact-item .hint {
+          font-size: 0.82rem;
+          color: var(--muted);
+          margin-top: 2px;
+        }
+
+        .mv-contact-status {
+          border-radius: 12px;
+          padding: 10px 12px;
+          font-size: 0.82rem;
+          color: var(--muted);
+          border: 1px solid rgba(0, 194, 168, 0.18);
+          background: rgba(0, 194, 168, 0.08);
+        }
+
+        .mv-contact-form {
+          padding: 22px;
+        }
+
+        .mv-contact-form h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          color: var(--text);
+        }
+
+        .mv-contact-form-sub {
+          margin-top: 6px;
+          margin-bottom: 16px;
+          font-size: 0.9rem;
+          color: var(--muted);
+          line-height: 1.6;
+        }
+
+        .mv-contact-alert {
+          margin-bottom: 12px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          font-size: 0.85rem;
+        }
+
+        .mv-contact-alert.success {
+          background: rgba(22, 163, 74, 0.1);
+          border: 1px solid rgba(22, 163, 74, 0.26);
+          color: #166534;
+        }
+
+        .mv-contact-alert.error {
+          background: rgba(220, 38, 38, 0.1);
+          border: 1px solid rgba(220, 38, 38, 0.26);
+          color: #991b1b;
+        }
+
+        .mv-contact-form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+
+        .mv-contact-field,
+        .mv-contact-area,
+        .mv-contact-select {
+          width: 100%;
+          border-radius: 10px;
+          border: 1px solid rgba(15, 32, 64, 0.16);
+          background: rgba(255, 255, 255, 0.88);
+          color: var(--text);
+          font-size: 0.9rem;
+          padding: 10px 12px;
+          outline: none;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .mv-contact-field::placeholder,
+        .mv-contact-area::placeholder {
+          color: #7f90a9;
+        }
+
+        .mv-contact-field:focus,
+        .mv-contact-area:focus,
+        .mv-contact-select:focus {
+          border-color: rgba(0, 194, 168, 0.65);
+          box-shadow: 0 0 0 3px rgba(0, 194, 168, 0.13);
+        }
+
+        .mv-contact-area {
+          resize: none;
+          min-height: 110px;
+          margin-top: 10px;
+        }
+
+        .mv-contact-submit {
+          width: 100%;
+          margin-top: 10px;
+          padding: 11px 16px;
+          border: 0;
+          border-radius: 10px;
+          font-weight: 600;
+          color: white;
+          cursor: pointer;
+          background: linear-gradient(135deg, var(--teal), #22c4f0);
+          transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .mv-contact-submit:hover {
+          opacity: 0.92;
+          transform: translateY(-1px);
+        }
+
+        .mv-contact-submit:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
         /* ── CTA section ── */
         .mv-cta-section {
           padding: 0 clamp(1.5rem, 5vw, 5rem) 100px;
@@ -654,6 +837,16 @@ export default function Home() {
 
           .mv-stat { border-right: none; border-bottom: 1px solid var(--border); }
           .mv-stat:last-child { border-bottom: none; }
+
+          .mv-contact-grid,
+          .mv-contact-form-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .mv-contact-form,
+          .mv-contact-card {
+            padding: 16px;
+          }
         }
 
         @media (max-width: 420px) {
@@ -801,159 +994,131 @@ export default function Home() {
         </div>
 
         {/* ── Support & Help Center ── */}
-        <section
-          id="support-help-center"
-          className="w-full py-16 sm:py-24 lg:py-32 bg-linear-to-b from-transparent to-slate-900/40"
-        >
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10">
-            {/* Heading */}
-            <div className="text-center mb-10 sm:mb-14 lg:mb-18">
-              <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold tracking-widest">
-                ● GET IN TOUCH
-              </span>
+        <section id="support-help-center" className="mv-contact-section">
+          <div className="mv-section-label">
+            <span className="mv-section-tag">Get in Touch</span>
+            <h2 className="mv-section-title">
+              We&apos;re here to <span className="accent">help you</span>
+            </h2>
+            <p className="mv-section-sub">
+              Questions, feedback, or issues — our support team responds quickly.
+            </p>
+          </div>
 
-              <h2 className="mt-5 sm:mt-6 text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
-                We&apos;re here to{' '}
-                <span className="bg-linear-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                  help you
-                </span>
-              </h2>
+          <div className="mv-contact-grid">
+            <div className="mv-contact-card">
+              <div className="mv-contact-item">
+                <div className="mv-contact-icon"><Mail size={16} /></div>
+                <div>
+                  <p className="label">Email</p>
+                  <p className="value">support@medivault.health</p>
+                  <p className="hint">We reply within 24h</p>
+                </div>
+              </div>
 
-              <p className="mt-3 sm:mt-4 text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
-                Questions, feedback, or issues — our support team responds quickly.
-              </p>
+              <div className="mv-contact-item">
+                <div className="mv-contact-icon"><Phone size={16} /></div>
+                <div>
+                  <p className="label">Phone</p>
+                  <p className="value">+91 98765 43210</p>
+                  <p className="hint">Mon–Fri, 9AM–6PM</p>
+                </div>
+              </div>
+
+              <div className="mv-contact-item">
+                <div className="mv-contact-icon"><MapPin size={16} /></div>
+                <div>
+                  <p className="label">Office</p>
+                  <p className="value">Sector 62, Noida</p>
+                  <p className="hint">India</p>
+                </div>
+              </div>
+
+              <div className="mv-contact-status">🟢 Support team online · avg response 20 min</div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
-              {/* LEFT: Contact Info */}
-              <div className="space-y-4 sm:space-y-5">
-                {/* Email */}
-                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
-                  <p className="text-xs text-slate-500 uppercase">Email</p>
-                  <p className="text-base sm:text-lg font-semibold text-white mt-2 break-all sm:break-normal">
-                    support@medivault.health
-                  </p>
-                  <p className="text-sm text-slate-400">We reply within 24h</p>
+            <div className="mv-contact-form">
+              <h3>Send us a Message</h3>
+              <p className="mv-contact-form-sub">Fill in details and we&apos;ll get back to you.</p>
+
+              {contactStatus.message && (
+                <div className={`mv-contact-alert ${contactStatus.type === 'success' ? 'success' : 'error'}`}>
+                  {contactStatus.message}
                 </div>
+              )}
 
-                {/* Phone */}
-                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
-                  <p className="text-xs text-slate-500 uppercase">Phone</p>
-                  <p className="text-base sm:text-lg font-semibold text-white mt-2">+91 98765 43210</p>
-                  <p className="text-sm text-slate-400">Mon–Fri, 9AM–6PM</p>
-                </div>
-
-                {/* Office */}
-                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
-                  <p className="text-xs text-slate-500 uppercase">Office</p>
-                  <p className="text-base sm:text-lg font-semibold text-white mt-2">Sector 62, Noida</p>
-                  <p className="text-sm text-slate-400">India</p>
-                </div>
-
-                {/* Status */}
-                <div className="px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-teal-500/30 bg-teal-500/10 text-sm text-slate-300">
-                  🟢 Support team online · avg response 20 min
-                </div>
-              </div>
-
-              {/* RIGHT: Contact Form */}
-              <div className="p-5 sm:p-6 lg:p-8 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl">
-                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Send us a Message</h3>
-                <p className="text-slate-400 mb-5 sm:mb-6 text-sm sm:text-base">
-                  Fill in details and we&apos;ll get back to you.
-                </p>
-
-                {/* STATUS MESSAGE */}
-                {contactStatus.message && (
-                  <div
-                    className={`mb-4 px-4 py-3 rounded-lg text-sm ${
-                      contactStatus.type === 'success'
-                        ? 'bg-green-500/10 border border-green-500/30 text-green-300'
-                        : 'bg-red-500/10 border border-red-500/30 text-red-300'
-                    }`}
-                  >
-                    {contactStatus.message}
-                  </div>
-                )}
-
-                <form onSubmit={handleContactSubmit} className="space-y-4 sm:space-y-5">
-                  {/* Name + Email */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <input
-                      name="name"
-                      value={contactForm.name}
-                      onChange={handleContactChange}
-                      required
-                      placeholder="Full Name"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-                    />
-
-                    <input
-                      name="email"
-                      type="email"
-                      value={contactForm.email}
-                      onChange={handleContactChange}
-                      required
-                      placeholder="Email Address"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-                    />
-                  </div>
-
-                  {/* Role + Issue */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <select
-                      name="role"
-                      value={contactForm.role}
-                      onChange={handleContactChange}
-                      required
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-                    >
-                      <option value="" disabled>
-                        Select role
-                      </option>
-                      <option value="Patient">Patient</option>
-                      <option value="Staff">Staff</option>
-                    </select>
-
-                    <select
-                      name="issueType"
-                      value={contactForm.issueType}
-                      onChange={handleContactChange}
-                      required
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-                    >
-                      <option value="" disabled>
-                        Select issue
-                      </option>
-                      <option value="Bug">Bug</option>
-                      <option value="Feedback">Feedback</option>
-                      <option value="Report Issue">Report Issue</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  {/* Message */}
-                  <textarea
-                    name="message"
-                    value={contactForm.message}
+              <form onSubmit={handleContactSubmit}>
+                <div className="mv-contact-form-grid">
+                  <input
+                    name="name"
+                    value={contactForm.name}
                     onChange={handleContactChange}
                     required
-                    rows={4}
-                    placeholder="Tell us your issue..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 resize-none"
+                    placeholder="Full Name"
+                    className="mv-contact-field"
                   />
 
-                  {/* Button */}
-                  <button
-                    type="submit"
-                    disabled={contactLoading}
-                    className="w-full py-3 rounded-xl font-semibold bg-linear-to-r from-teal-500 to-cyan-500 text-white hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  <input
+                    name="email"
+                    type="email"
+                    value={contactForm.email}
+                    onChange={handleContactChange}
+                    required
+                    placeholder="Email Address"
+                    className="mv-contact-field"
+                  />
+                </div>
+
+                <div className="mv-contact-form-grid" style={{ marginTop: '10px' }}>
+                  <select
+                    name="role"
+                    value={contactForm.role}
+                    onChange={handleContactChange}
+                    required
+                    className="mv-contact-select"
                   >
-                    {contactLoading ? 'Sending...' : 'Send Message'}
-                  </button>
-                </form>
-              </div>
+                    <option value="" disabled>
+                      Select role
+                    </option>
+                    <option value="Patient">Patient</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+
+                  <select
+                    name="issueType"
+                    value={contactForm.issueType}
+                    onChange={handleContactChange}
+                    required
+                    className="mv-contact-select"
+                  >
+                    <option value="" disabled>
+                      Select issue
+                    </option>
+                    <option value="Bug">Bug</option>
+                    <option value="Feedback">Feedback</option>
+                    <option value="Report Issue">Report Issue</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <textarea
+                  name="message"
+                  value={contactForm.message}
+                  onChange={handleContactChange}
+                  required
+                  rows={4}
+                  placeholder="Tell us your issue..."
+                  className="mv-contact-area"
+                />
+
+                <button
+                  type="submit"
+                  disabled={contactLoading}
+                  className="mv-contact-submit"
+                >
+                  {contactLoading ? 'Sending...' : 'Send Message'}
+                </button>
+              </form>
             </div>
           </div>
         </section>
