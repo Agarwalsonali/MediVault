@@ -166,15 +166,15 @@ export default function Home() {
       <style>{`
         /* ── Tokens ── */
         :root {
-          --bg: #060d18;
-          --bg2: #0a1628;
-          --surface: rgba(255,255,255,0.04);
-          --border: rgba(255,255,255,0.08);
+          --bg: #f4f8ff;
+          --bg2: #eaf2ff;
+          --surface: rgba(255,255,255,0.84);
+          --border: rgba(15,32,64,0.12);
           --teal: #00c2a8;
           --teal-dim: rgba(0,194,168,0.12);
           --blue: #3b82f6;
-          --text: #e8f0fe;
-          --muted: #7a8ba5;
+          --text: #0f2040;
+          --muted: #5f728f;
           --font-display: 'DM Sans', 'Segoe UI', sans-serif;
           --font-body: 'DM Sans', 'Segoe UI', sans-serif;
           --radius: 16px;
@@ -288,7 +288,7 @@ export default function Home() {
           border-bottom: 1px solid transparent;
         }
         .mv-nav.scrolled {
-          background: rgba(6,13,24,0.85);
+          background: rgba(255,255,255,0.86);
           backdrop-filter: blur(20px);
           border-color: var(--border);
         }
@@ -313,7 +313,7 @@ export default function Home() {
         }
         .mv-brand-name {
           font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
-          background: linear-gradient(90deg, #fff 60%, var(--teal));
+          background: linear-gradient(90deg, var(--text) 60%, var(--teal));
           -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .mv-nav-actions { display: flex; align-items: center; gap: 10px; }
@@ -376,7 +376,7 @@ export default function Home() {
           font-weight: 700;
           line-height: 1.12;
           letter-spacing: -0.03em;
-          color: #fff;
+          color: var(--text);
           margin-bottom: 22px;
         }
         .mv-hero-title .accent {
@@ -447,7 +447,7 @@ export default function Home() {
         }
         .mv-section-title {
           font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-          font-weight: 700; letter-spacing: -0.03em; color: #fff;
+          font-weight: 700; letter-spacing: -0.03em; color: var(--text);
           line-height: 1.2;
         }
         .mv-section-sub {
@@ -477,8 +477,8 @@ export default function Home() {
         }
         .mv-feature-card:hover {
           transform: translateY(-5px);
-          border-color: rgba(255,255,255,0.14);
-          box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+          border-color: rgba(15,32,64,0.18);
+          box-shadow: 0 14px 36px rgba(15,32,64,0.14);
         }
         .mv-feature-card:hover::before { opacity: 1; }
         .mv-feature-icon {
@@ -489,7 +489,7 @@ export default function Home() {
         }
         .mv-feature-card:hover .mv-feature-icon { transform: scale(1.1) rotate(-3deg); }
         .mv-feature-card h3 {
-          font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: #fff;
+          font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: var(--text);
         }
         .mv-feature-card p {
           font-size: 0.9rem; color: var(--muted); line-height: 1.65;
@@ -524,7 +524,7 @@ export default function Home() {
         .mv-cta-inner { position: relative; }
         .mv-cta h2 {
           font-size: clamp(1.6rem, 3.5vw, 2.2rem);
-          font-weight: 700; letter-spacing: -0.03em; color: #fff;
+          font-weight: 700; letter-spacing: -0.03em; color: var(--text);
           margin-bottom: 12px;
         }
         .mv-cta p {
