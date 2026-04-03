@@ -1,8 +1,21 @@
 import Contact from "../models/contact.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import { sendSupportRequestNotificationEmail } from "../utils/sendEmail.js";
 
 const ALLOWED_ROLES = ["Patient", "Staff"];
 const ALLOWED_ISSUE_TYPES = ["Bug", "Feedback", "Report Issue", "Other"];
+
+const resolveAdminRecipients = () => {
+  const configured = [
+    process.env.CONTACT_ADMIN_EMAIL,
+    process.env.ADMIN_EMAIL,
+  ]
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(","))
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  return [...new Set(configured)];
+};
 
 export const createContactMessage = async (req, res) => {
   try {
@@ -34,25 +47,28 @@ export const createContactMessage = async (req, res) => {
       message: normalizedMessage,
     });
 
-    const adminEmail = process.env.CONTACT_ADMIN_EMAIL?.trim();
-    if (adminEmail) {
-      try {
-        const subject = `[MediVault Support] ${normalizedIssueType} from ${normalizedName}`;
-        const text = `New support request received.\n\nName: ${normalizedName}\nEmail: ${normalizedEmail}\nRole: ${normalizedRole}\nIssue Type: ${normalizedIssueType}\n\nMessage:\n${normalizedMessage}`;
-        const html = `
-          <h2>New Support Request</h2>
-          <p><strong>Name:</strong> ${normalizedName}</p>
-          <p><strong>Email:</strong> ${normalizedEmail}</p>
-          <p><strong>Role:</strong> ${normalizedRole}</p>
-          <p><strong>Issue Type:</strong> ${normalizedIssueType}</p>
-          <p><strong>Message:</strong></p>
-          <p>${normalizedMessage.replace(/\n/g, "<br />")}</p>
-        `;
+    const recipients = resolveAdminRecipients();
+    if (recipients.length === 0) {
+      return res.status(500).json({
+        message: "Support inbox is not configured on server.",
+      });
+    }
 
-        await sendEmail(adminEmail, subject, text, html);
-      } catch (emailError) {
-        console.error("Contact admin notification failed:", emailError.message);
-      }
+    try {
+      await sendSupportRequestNotificationEmail({
+        to: recipients.join(","),
+        name: normalizedName,
+        email: normalizedEmail,
+        role: normalizedRole,
+        issueType: normalizedIssueType,
+        message: normalizedMessage,
+        submittedAt: new Date().toLocaleString(),
+      });
+    } catch (emailError) {
+      console.error("Contact admin notification failed:", emailError.message);
+      return res.status(502).json({
+        message: "Message saved, but admin notification email failed. Please try again.",
+      });
     }
 
     return res.status(201).json({ message: "Support request submitted successfully" });

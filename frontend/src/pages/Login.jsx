@@ -45,12 +45,12 @@ export default function Login() {
       <div className="auth-hero-panel">
         <div className="auth-hero-grid" />
 
-        <div className="auth-brand">
+        <Link to="/" className="auth-brand">
           <div className="auth-brand-icon">
             <Activity size={22} color="white" strokeWidth={2} />
           </div>
           <span className="auth-brand-name">MediVault</span>
-        </div>
+        </Link>
 
         <div className="auth-hero-content">
           <h2 className="auth-hero-headline">
@@ -77,12 +77,12 @@ export default function Login() {
         <div className="auth-form-card animate-fade-up">
 
           {/* Mobile brand */}
-          <div className="auth-form-mobile-brand">
+          <Link to="/" className="auth-form-mobile-brand" style={{ textDecoration: 'none' }}>
             <div className="auth-brand-icon" style={{ width: 36, height: 36 }}>
               <Activity size={18} color="white" />
             </div>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--mv-navy)' }}>MediVault</span>
-          </div>
+          </Link>
 
           <div className="auth-form-header">
             <h1 className="auth-form-title">Welcome back</h1>

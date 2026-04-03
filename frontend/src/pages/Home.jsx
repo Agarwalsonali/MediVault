@@ -14,6 +14,11 @@ import {
   Send,
   BarChart3,
   ChevronDown,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Dot,
 } from 'lucide-react';
 import { submitContactMessage } from '../services/contactService';
 
@@ -796,146 +801,159 @@ export default function Home() {
         </div>
 
         {/* ── Support & Help Center ── */}
-        <section id="support-help-center" className="mx-auto w-full max-w-6xl px-6 pb-24 sm:px-8 lg:px-12">
-          <div className="mb-10 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-teal-300">
-              <CircleHelp size={14} /> Support Portal
-            </span>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Support &amp; Help Center
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              Find quick answers and contact our team for bugs, feedback, or report-related issues.
-            </p>
-          </div>
+        <section
+          id="support-help-center"
+          className="w-full py-16 sm:py-24 lg:py-32 bg-linear-to-b from-transparent to-slate-900/40"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10">
+            {/* Heading */}
+            <div className="text-center mb-10 sm:mb-14 lg:mb-18">
+              <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold tracking-widest">
+                ● GET IN TOUCH
+              </span>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_12px_40px_rgba(2,6,23,0.35)] backdrop-blur-sm sm:p-7">
-              <h3 className="mb-5 text-xl font-semibold text-white">Frequently Asked Questions</h3>
-              <div className="space-y-3">
-                {FAQS.map((faq) => (
-                  <article
-                    key={faq.question}
-                    className="rounded-xl border border-white/10 bg-slate-950/35 p-4 transition hover:border-teal-400/40"
-                  >
-                    <h4 className="text-sm font-semibold text-slate-100 sm:text-base">{faq.question}</h4>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
-                  </article>
-                ))}
-              </div>
+              <h2 className="mt-5 sm:mt-6 text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
+                We&apos;re here to{' '}
+                <span className="bg-linear-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                  help you
+                </span>
+              </h2>
+
+              <p className="mt-3 sm:mt-4 text-slate-400 max-w-2xl mx-auto text-sm sm:text-base">
+                Questions, feedback, or issues — our support team responds quickly.
+              </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_12px_40px_rgba(2,6,23,0.35)] backdrop-blur-sm sm:p-7">
-              <h3 className="mb-5 text-xl font-semibold text-white">Contact Support</h3>
-
-              {contactStatus.message ? (
-                <div
-                  className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
-                    contactStatus.type === 'success'
-                      ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-                      : 'border-red-400/40 bg-red-500/10 text-red-200'
-                  }`}
-                >
-                  {contactStatus.message}
-                </div>
-              ) : null}
-
-              <form className="space-y-4" onSubmit={handleContactSubmit}>
-                <div>
-                  <label htmlFor="name" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-300">
-                    Full Name
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={contactForm.name}
-                    onChange={handleContactChange}
-                    className="w-full rounded-xl border border-white/15 bg-slate-950/40 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-teal-400 focus:outline-none"
-                    placeholder="Enter your full name"
-                  />
+            {/* Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
+              {/* LEFT: Contact Info */}
+              <div className="space-y-4 sm:space-y-5">
+                {/* Email */}
+                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
+                  <p className="text-xs text-slate-500 uppercase">Email</p>
+                  <p className="text-base sm:text-lg font-semibold text-white mt-2 break-all sm:break-normal">
+                    support@medivault.health
+                  </p>
+                  <p className="text-sm text-slate-400">We reply within 24h</p>
                 </div>
 
-                <div>
-                  <label htmlFor="email" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-300">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={contactForm.email}
-                    onChange={handleContactChange}
-                    className="w-full rounded-xl border border-white/15 bg-slate-950/40 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-teal-400 focus:outline-none"
-                    placeholder="you@example.com"
-                  />
+                {/* Phone */}
+                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
+                  <p className="text-xs text-slate-500 uppercase">Phone</p>
+                  <p className="text-base sm:text-lg font-semibold text-white mt-2">+91 98765 43210</p>
+                  <p className="text-sm text-slate-400">Mon–Fri, 9AM–6PM</p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="role" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-300">
-                      Role
-                    </label>
-                    <select
-                      id="role"
-                      name="role"
+                {/* Office */}
+                <div className="p-4 sm:p-5 lg:p-6 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 transition">
+                  <p className="text-xs text-slate-500 uppercase">Office</p>
+                  <p className="text-base sm:text-lg font-semibold text-white mt-2">Sector 62, Noida</p>
+                  <p className="text-sm text-slate-400">India</p>
+                </div>
+
+                {/* Status */}
+                <div className="px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-teal-500/30 bg-teal-500/10 text-sm text-slate-300">
+                  🟢 Support team online · avg response 20 min
+                </div>
+              </div>
+
+              {/* RIGHT: Contact Form */}
+              <div className="p-5 sm:p-6 lg:p-8 rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl">
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">Send us a Message</h3>
+                <p className="text-slate-400 mb-5 sm:mb-6 text-sm sm:text-base">
+                  Fill in details and we&apos;ll get back to you.
+                </p>
+
+                {/* STATUS MESSAGE */}
+                {contactStatus.message && (
+                  <div
+                    className={`mb-4 px-4 py-3 rounded-lg text-sm ${
+                      contactStatus.type === 'success'
+                        ? 'bg-green-500/10 border border-green-500/30 text-green-300'
+                        : 'bg-red-500/10 border border-red-500/30 text-red-300'
+                    }`}
+                  >
+                    {contactStatus.message}
+                  </div>
+                )}
+
+                <form onSubmit={handleContactSubmit} className="space-y-4 sm:space-y-5">
+                  {/* Name + Email */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <input
+                      name="name"
+                      value={contactForm.name}
+                      onChange={handleContactChange}
                       required
+                      placeholder="Full Name"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                    />
+
+                    <input
+                      name="email"
+                      type="email"
+                      value={contactForm.email}
+                      onChange={handleContactChange}
+                      required
+                      placeholder="Email Address"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                    />
+                  </div>
+
+                  {/* Role + Issue */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <select
+                      name="role"
                       value={contactForm.role}
                       onChange={handleContactChange}
-                      className="w-full rounded-xl border border-white/15 bg-slate-950/40 px-3.5 py-2.5 text-sm text-white focus:border-teal-400 focus:outline-none"
+                      required
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                     >
+                      <option value="" disabled>
+                        Select role
+                      </option>
                       <option value="Patient">Patient</option>
                       <option value="Staff">Staff</option>
                     </select>
-                  </div>
 
-                  <div>
-                    <label htmlFor="issueType" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-300">
-                      Issue Type
-                    </label>
                     <select
-                      id="issueType"
                       name="issueType"
-                      required
                       value={contactForm.issueType}
                       onChange={handleContactChange}
-                      className="w-full rounded-xl border border-white/15 bg-slate-950/40 px-3.5 py-2.5 text-sm text-white focus:border-teal-400 focus:outline-none"
+                      required
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                     >
+                      <option value="" disabled>
+                        Select issue
+                      </option>
                       <option value="Bug">Bug</option>
                       <option value="Feedback">Feedback</option>
                       <option value="Report Issue">Report Issue</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="message" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-slate-300">
-                    Message
-                  </label>
+                  {/* Message */}
                   <textarea
-                    id="message"
                     name="message"
-                    required
-                    rows={5}
                     value={contactForm.message}
                     onChange={handleContactChange}
-                    className="w-full rounded-xl border border-white/15 bg-slate-950/40 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 focus:border-teal-400 focus:outline-none"
-                    placeholder="Describe your issue or feedback..."
+                    required
+                    rows={4}
+                    placeholder="Tell us your issue..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 resize-none"
                   />
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={contactLoading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-teal-400 to-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Send size={16} />
-                  {contactLoading ? 'Submitting...' : 'Submit Request'}
-                </button>
-              </form>
+                  {/* Button */}
+                  <button
+                    type="submit"
+                    disabled={contactLoading}
+                    className="w-full py-3 rounded-xl font-semibold bg-linear-to-r from-teal-500 to-cyan-500 text-white hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {contactLoading ? 'Sending...' : 'Send Message'}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </section>
@@ -981,3 +999,4 @@ export default function Home() {
     </>
   );
 }
+

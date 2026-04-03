@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, RotateCcw, Activity } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { verifyEmail, resendVerificationOtp, getVerifyEmail } from '../services/authService.js';
@@ -129,12 +129,12 @@ export default function VerifyEmail() {
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <Link to="/" style={{ textAlign: 'center', marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg,var(--mv-teal),var(--mv-teal-glow))', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Activity size={13} color="white" />
           </div>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--mv-slate-dark)' }}>MediVault</span>
-        </div>
+        </Link>
       </div>
     </div>
   );

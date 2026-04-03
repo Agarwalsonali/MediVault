@@ -405,3 +405,80 @@ export const sendInviteEmail = async (email, link, role = 'Staff') => {
 
   return sendEmail(email, subject, text, html);
 };
+
+/* ─────────────────────────────────────────
+   5. SUPPORT REQUEST NOTIFICATION (ADMIN)
+───────────────────────────────────────── */
+const escapeHtml = (value = '') =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+export const sendSupportRequestNotificationEmail = async ({
+  to,
+  name,
+  email,
+  role,
+  issueType,
+  message,
+  submittedAt,
+}) => {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeRole = escapeHtml(role);
+  const safeIssueType = escapeHtml(issueType);
+  const safeMessage = escapeHtml(message).replace(/\n/g, '<br/>');
+  const safeSubmittedAt = escapeHtml(submittedAt || new Date().toLocaleString());
+
+  const subject = `[MediVault Support] ${issueType} from ${name}`;
+  const text = `New support request received.\n\nName: ${name}\nEmail: ${email}\nRole: ${role}\nIssue Type: ${issueType}\nSubmitted At: ${safeSubmittedAt}\n\nMessage:\n${message}`;
+
+  const html = emailShell({
+    preheader: `New support request from ${name} (${issueType})`,
+    body: `
+      <h1 class="email-title">New Support Request</h1>
+      <p class="email-sub">
+        A new support request was submitted from the public Help Center form.
+      </p>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="padding:6px 0; width:120px; font-size:13px; color:#64748b; font-weight:600;">Name</td>
+            <td style="padding:6px 0; font-size:14px; color:#0f172a;">${safeName}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; width:120px; font-size:13px; color:#64748b; font-weight:600;">Email</td>
+            <td style="padding:6px 0; font-size:14px; color:#0f172a;">${safeEmail}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; width:120px; font-size:13px; color:#64748b; font-weight:600;">Role</td>
+            <td style="padding:6px 0; font-size:14px; color:#0f172a;">${safeRole}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; width:120px; font-size:13px; color:#64748b; font-weight:600;">Issue Type</td>
+            <td style="padding:6px 0; font-size:14px; color:#0f172a;">${safeIssueType}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; width:120px; font-size:13px; color:#64748b; font-weight:600;">Submitted At</td>
+            <td style="padding:6px 0; font-size:14px; color:#0f172a;">${safeSubmittedAt}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="height:12px;"></div>
+
+      <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:16px;">
+        <p style="margin:0 0 8px; font-size:13px; color:#0f766e; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">
+          Message
+        </p>
+        <p style="margin:0; font-size:14px; color:#0f172a; line-height:1.7;">${safeMessage}</p>
+      </div>
+    `,
+  });
+
+  return sendEmail(to, subject, text, html);
+};

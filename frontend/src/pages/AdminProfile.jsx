@@ -113,7 +113,7 @@ export default function AdminProfile() {
 
   return (
     <div className="dash-page">
-      <div style={{ marginBottom: '1.75rem' }}>
+      <div className="hidden lg:block" style={{ marginBottom: '1.75rem' }}>
         <h1 className="dash-page-title">Admin Profile</h1>
         <p className="dash-page-subtitle">Manage your administrator account and credentials</p>
       </div>

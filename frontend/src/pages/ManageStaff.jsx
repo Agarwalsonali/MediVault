@@ -139,7 +139,7 @@ export default function ManageStaff() {
 
   return (
     <div className="dash-page">
-      <div style={{ marginBottom: '1.75rem' }}>
+      <div className="hidden lg:block" style={{ marginBottom: '1.75rem' }}>
         <h1 className="dash-page-title">Manage Staff</h1>
         <p className="dash-page-subtitle">Create, invite, update and remove Nurse or Staff accounts</p>
       </div>
@@ -254,7 +254,7 @@ export default function ManageStaff() {
           </div>
         ) : (
           <>
-            <div className="mv-table-wrap">
+            <div className="hidden sm:block mv-table-wrap">
               <table className="mv-table">
                 <thead>
                   <tr>
@@ -300,12 +300,58 @@ export default function ManageStaff() {
               </table>
             </div>
 
+            <div className="sm:hidden" style={{ padding: '0.9rem' }}>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {paginated.map(s => {
+                  const id  = s._id || s.id;
+                  const ini = (s.fullName || '?').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+                  const rs  = ROLE_STYLE[s.role] || { cls: 'mv-badge-gray', label: s.role };
+
+                  return (
+                    <div key={id} className="mv-card" style={{ boxShadow: 'none' }}>
+                      <div className="mv-card-body" style={{ padding: '0.85rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,var(--mv-teal),var(--mv-teal-glow))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 600, color: 'white', flexShrink: 0 }}>{ini}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--mv-slate-900)', margin: 0 }}>{s.fullName}</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)', margin: 0, overflowWrap: 'anywhere' }}>{s.email}</p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span className={`mv-badge ${rs.cls}`}>{rs.label}</span>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => startEdit(s)}
+                              className="mv-btn mv-btn-ghost mv-btn-sm"
+                              style={{ gap: 5, color: 'var(--mv-warning)', padding: '0 10px' }}
+                              title="Edit"
+                            >
+                              <Edit2 size={13} /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(s)}
+                              className="mv-btn mv-btn-ghost mv-btn-sm"
+                              style={{ gap: 5, color: 'var(--mv-danger)', padding: '0 10px' }}
+                              title="Delete"
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Pagination */}
-            <div style={{ padding: '0.875rem 1.375rem', borderTop: '1px solid var(--mv-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ padding: '0.875rem 1.375rem', borderTop: '1px solid var(--mv-border)', gap: 10 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)', textAlign: 'center' }}>
                 Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 10px' }}>
                   <ChevronLeft size={15} />

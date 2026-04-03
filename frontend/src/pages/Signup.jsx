@@ -58,10 +58,10 @@ export default function Signup() {
       {/* ── Left hero ── */}
       <div className="auth-hero-panel">
         <div className="auth-hero-grid" />
-        <div className="auth-brand">
+        <Link to="/" className="auth-brand">
           <div className="auth-brand-icon"><Activity size={22} color="white" /></div>
           <span className="auth-brand-name">MediVault</span>
-        </div>
+        </Link>
         <div className="auth-hero-content">
           <h2 className="auth-hero-headline">Join thousands who<br /><em>trust MediVault.</em></h2>
           <p className="auth-hero-sub">Create your secure health vault in seconds. Prescriptions, reports and records — all in one place.</p>
@@ -79,10 +79,10 @@ export default function Signup() {
       <div className="auth-form-panel">
         <div className="auth-form-card animate-fade-up">
 
-          <div className="auth-form-mobile-brand">
+          <Link to="/" className="auth-form-mobile-brand" style={{ textDecoration: 'none' }}>
             <div className="auth-brand-icon" style={{ width: 36, height: 36 }}><Activity size={18} color="white" /></div>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--mv-navy)' }}>MediVault</span>
-          </div>
+          </Link>
 
           <div className="auth-form-header">
             <h1 className="auth-form-title">Create your account</h1>
