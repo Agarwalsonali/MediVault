@@ -1,5 +1,5 @@
 // Enhanced Input — uses MediVault design system CSS classes from index.css
-function Input({ label, name, type = 'text', value, onChange, placeholder = '', autoComplete, error, icon, hint }) {
+function Input({ label, name, type = 'text', value, onChange, placeholder = '', autoComplete, error, icon, hint, disabled = false }) {
   return (
     <div className="mv-form-group">
       {label && <label htmlFor={name} className="mv-label">{label}</label>}
@@ -8,6 +8,7 @@ function Input({ label, name, type = 'text', value, onChange, placeholder = '', 
         <input
           id={name} name={name} type={type} value={value}
           onChange={onChange} placeholder={placeholder} autoComplete={autoComplete}
+          disabled={disabled}
           className={`mv-input${error ? ' error' : ''}`}
         />
       </div>
