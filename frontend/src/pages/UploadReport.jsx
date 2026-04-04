@@ -148,10 +148,11 @@ export default function UploadReport() {
     : `${(b / 1048576).toFixed(1)} MB`;
 
   return (
-    <div className="max-w-2xl mx-auto rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+    <div className="dash-page">
+      <div className="w-full max-w-2xl mx-auto rounded-2xl sm:rounded-3xl border border-slate-100 bg-white p-4 sm:p-6 lg:p-8 shadow-sm">
 
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
+      {/* Desktop intro */}
+      <div className="hidden lg:flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Upload Medical Report</h1>
           <p className="mt-1 text-sm text-slate-500">Supports all formats — lab, X-ray, prescription, DICOM & more.</p>
@@ -161,7 +162,7 @@ export default function UploadReport() {
         </span>
       </div>
 
-      <form className="grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
+      <form className="grid gap-4 sm:gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
 
         {/* ── Patient Search Combobox ── */}
         <div className="sm:col-span-2" ref={searchRef}>
@@ -171,7 +172,7 @@ export default function UploadReport() {
 
           {/* Selected patient badge */}
           {selectedPatient ? (
-            <div className="flex items-center gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
               <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold flex-none">
                 {selectedPatient.name.charAt(0).toUpperCase()}
               </div>
@@ -179,7 +180,7 @@ export default function UploadReport() {
                 <p className="text-sm font-semibold text-slate-900">{selectedPatient.name}</p>
                 <p className="text-xs text-slate-500">{selectedPatient.patientId} · {selectedPatient.age}y · {selectedPatient.gender}</p>
               </div>
-              <button type="button" onClick={clearPatient} className="text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={clearPatient} className="ml-auto text-slate-400 hover:text-slate-600 shrink-0">
                 <X size={16} />
               </button>
             </div>
@@ -360,6 +361,7 @@ export default function UploadReport() {
           )}
         </div>
       </form>
+      </div>
     </div>
   );
 }

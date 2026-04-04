@@ -137,18 +137,18 @@ export default function StaffProfile() {
 
   return (
     <div className="dash-page">
-      <div style={{ marginBottom: '1.75rem' }}>
+      <div className="hidden lg:block" style={{ marginBottom: '1.75rem' }}>
         <h1 className="dash-page-title">Staff Profile</h1>
         <p className="dash-page-subtitle">Manage your staff account details and credentials</p>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--mv-slate)', padding: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--mv-slate)', padding: 'clamp(1.25rem, 4vw, 3rem)' }}>
           <span className="mv-spinner" style={{ borderTopColor: 'var(--mv-teal)', borderColor: 'var(--mv-border)' }} />
           Loading profile…
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', maxWidth: 860 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem', maxWidth: 860, width: '100%' }}>
           <div className="mv-card animate-fade-up" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
             <div style={{ width: 88, margin: '0 auto 1rem' }}>
               <div

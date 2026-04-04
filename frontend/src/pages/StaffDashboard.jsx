@@ -28,9 +28,8 @@ export default function StaffDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-const user = getUser();
-
-const staffName = user?.fullName || user?.name || user?.username || 'Staff';
+  const user = getUser();
+  const staffName = user?.fullName || user?.name || user?.username || 'Staff';
 
   // Derive quick stats from patient data
   const totalPatients  = patients.length;
@@ -58,10 +57,10 @@ const staffName = user?.fullName || user?.name || user?.username || 'Staff';
   }
 
   return (
-    <div className="space-y-6">
+    <div className="dash-page space-y-4 sm:space-y-6">
 
-      {/* ── Welcome Banner ── */}
-      <div className="bg-gradient-to-br from-sky-600 to-blue-700 rounded-2xl p-6 text-white">
+      {/* ── Desktop Intro Banner ── */}
+      <div className="hidden lg:block bg-linear-to-br from-sky-600 to-blue-700 rounded-2xl p-6 text-white">
         <p className="text-sky-200 text-sm font-medium">{greeting}</p>
         <h1 className="text-2xl font-bold mt-0.5">{staffName} 👋</h1>
         <p className="text-sky-100 text-sm mt-1">
@@ -78,7 +77,7 @@ const staffName = user?.fullName || user?.name || user?.username || 'Staff';
       )}
 
       {/* ── Stats Cards ── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<Users size={20} />}
           label="Total Patients"
@@ -131,7 +130,7 @@ const staffName = user?.fullName || user?.name || user?.username || 'Staff';
 
       {/* ── Patient List ── */}
       <div id="patient-list" className="bg-white rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-5 border-b border-slate-100">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">Patients</h2>
           <input
             type="text"
@@ -152,7 +151,7 @@ const staffName = user?.fullName || user?.name || user?.username || 'Staff';
               <div
                 key={patient._id}
                 onClick={() => navigate(`/patients/${patient._id}`)}
-                className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
+                className="flex items-start sm:items-center justify-between gap-2 px-4 sm:px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-sm font-bold flex-none">
@@ -163,7 +162,7 @@ const staffName = user?.fullName || user?.name || user?.username || 'Staff';
                     <p className="text-xs text-slate-400">{patient.patientId} · {patient.age}y · {patient.gender}</p>
                   </div>
                 </div>
-                <ArrowRight size={16} className="text-slate-300 group-hover:text-sky-500 transition-colors" />
+                <ArrowRight size={16} className="hidden sm:block text-slate-300 group-hover:text-sky-500 transition-colors" />
               </div>
             ))}
           </div>
