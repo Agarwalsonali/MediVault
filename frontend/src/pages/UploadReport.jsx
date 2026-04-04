@@ -1,148 +1,365 @@
-import { useState, useRef } from 'react';
-import Input from '../components/Input.jsx';
-import { Upload, FileText, X, Lock } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useState, useEffect, useRef } from 'react';
+import { Search, X, CheckCircle, AlertCircle, Loader, User } from 'lucide-react';
+import { getPatients } from '../services/patientService.js';
+
+
+const REPORT_TYPES = [
+  'Blood Test', 'Urine Test', 'X-Ray', 'MRI Scan', 'CT Scan',
+  'Ultrasound', 'ECG / EKG', 'Echocardiogram', 'Prescription',
+  'Discharge Summary', 'Pathology Report', 'Radiology Report',
+  'Vaccination Record', 'Allergy Test', 'COVID-19 Test',
+  'Biopsy Report', 'Dental Record', 'Ophthalmology Report', 'Other',
+];
+
+const ACCEPTED = '.pdf,.jpg,.jpeg,.png,.webp,.tiff,.tif,.dcm,.doc,.docx';
 
 export default function UploadReport() {
-  const [patientName, setPatientName] = useState('');
-  const [reportType,  setReportType]  = useState('');
-  const [file,        setFile]        = useState(null);
-  const [dragover,    setDragover]    = useState(false);
-  const [submitting,  setSubmitting]  = useState(false);
-  const fileRef = useRef();
+  // Patient search state
+  const [allPatients, setAllPatients]       = useState([]);
+  const [searchText, setSearchText]         = useState('');
+  const [showDropdown, setShowDropdown]     = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const searchRef = useRef(null);
 
-  const handleFile = (f) => {
-    if (!f) return;
-    const ok = ['application/pdf','image/png','image/jpeg'].includes(f.type);
-    if (!ok) { toast.error('Invalid file type. Please use PDF, PNG or JPG.'); return; }
-    setFile(f);
+  // Form state
+  const [reportName, setReportName]   = useState('');
+  const [reportType, setReportType]   = useState('');
+  const [reportDate, setReportDate]   = useState('');
+  const [doctorName, setDoctorName]   = useState('');
+  const [notes, setNotes]             = useState('');
+  const [file, setFile]               = useState(null);
+
+  // UI state
+  const [submitting, setSubmitting]   = useState(false);
+  const [progress, setProgress]       = useState(0);
+  const [message, setMessage]         = useState({ text: '', ok: true });
+  const [errors, setErrors]           = useState({});
+
+  // Load patients once
+  useEffect(() => {
+    getPatients()
+      .then(data => setAllPatients(data || []))
+      .catch(() => {});
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Filter patients by typed text
+  const filtered = searchText.trim().length === 0
+    ? allPatients
+    : allPatients.filter(p =>
+        p.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+        p.patientId?.toLowerCase().includes(searchText.toLowerCase())
+      );
+
+  const selectPatient = (patient) => {
+    setSelectedPatient(patient);
+    setSearchText(patient.name);
+    setShowDropdown(false);
+    setErrors(prev => ({ ...prev, patient: '' }));
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault(); setDragover(false);
-    handleFile(e.dataTransfer.files?.[0]);
+  const clearPatient = () => {
+    setSelectedPatient(null);
+    setSearchText('');
+    setShowDropdown(false);
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!selectedPatient)      e.patient    = 'Please select a patient.';
+    if (!reportName.trim())    e.reportName = 'Report name is required.';
+    if (!reportType)           e.reportType = 'Please select a report type.';
+    if (!reportDate)           e.reportDate = 'Please select a date.';
+    if (!file)                 e.file       = 'Please attach a file.';
+    return e;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!patientName.trim()) { toast.error('Please enter a patient name.'); return; }
-    if (!reportType.trim())  { toast.error('Please select a report type.'); return; }
-    if (!file)               { toast.error('Please choose a file to upload.'); return; }
+    setMessage({ text: '', ok: true });
+
+    const errs = validate();
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setErrors({});
+
+    const formData = new FormData();
+    formData.append('patientId',  selectedPatient._id);
+    formData.append('reportName', reportName.trim());
+    formData.append('reportType', reportType);
+    formData.append('reportDate', reportDate);
+    formData.append('doctorName', doctorName.trim());
+    formData.append('notes',      notes.trim());
+    formData.append('file',       file);
 
     setSubmitting(true);
+    setProgress(10);
+
     try {
-      await new Promise(r => setTimeout(r, 800));
-      toast.success(`Report "${file.name}" uploaded successfully!`);
-      setFile(null); setPatientName(''); setReportType('');
-    } finally { setSubmitting(false); }
+      const token = localStorage.getItem('token');
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/reports');
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable)
+            setProgress(Math.round((ev.loaded / ev.total) * 90));
+        };
+
+        xhr.onload = () => {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status === 201) resolve(data);
+          else reject(new Error(data.message || 'Upload failed'));
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(formData);
+      });
+
+      setProgress(100);
+      setMessage({ text: `✓ Report uploaded successfully for ${selectedPatient.name}!`, ok: true });
+
+      // Reset
+      clearPatient();
+      setReportName(''); setReportType(''); setReportDate('');
+      setDoctorName(''); setNotes(''); setFile(null);
+      document.getElementById('report-file').value = '';
+
+    } catch (err) {
+      setMessage({ text: err.message, ok: false });
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setProgress(0), 1500);
+    }
   };
 
+  const fmtSize = (b) => !b ? '' : b < 1048576
+    ? `${(b / 1024).toFixed(1)} KB`
+    : `${(b / 1048576).toFixed(1)} MB`;
+
   return (
-    <div className="dash-page">
-      <div style={{ marginBottom: '1.75rem' }}>
-        <h1 className="dash-page-title">Upload Report</h1>
-        <p className="dash-page-subtitle">Securely upload a patient medical report</p>
+    <div className="max-w-2xl mx-auto rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Upload Medical Report</h1>
+          <p className="mt-1 text-sm text-slate-500">Supports all formats — lab, X-ray, prescription, DICOM & more.</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-2xl bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 ring-1 ring-teal-100">
+          🔒 Secure Cloud Storage
+        </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', maxWidth: 780 }}>
+      <form className="grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
 
-        {/* Form card */}
-        <div className="mv-card animate-fade-up" style={{ gridColumn: '1 / -1', maxWidth: 620 }}>
-          {/* Header strip */}
-          <div style={{ background: 'var(--mv-navy)', padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, background: 'rgba(13,148,136,0.25)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Upload size={18} color="var(--mv-teal-glow)" />
+        {/* ── Patient Search Combobox ── */}
+        <div className="sm:col-span-2" ref={searchRef}>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Patient <span className="text-rose-500">*</span>
+          </label>
+
+          {/* Selected patient badge */}
+          {selectedPatient ? (
+            <div className="flex items-center gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
+              <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold flex-none">
+                {selectedPatient.name.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <p style={{ fontWeight: 600, color: 'white', fontSize: '0.9375rem' }}>Upload Medical Report</p>
-                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>All transfers are encrypted</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900">{selectedPatient.name}</p>
+                <p className="text-xs text-slate-500">{selectedPatient.patientId} · {selectedPatient.age}y · {selectedPatient.gender}</p>
               </div>
+              <button type="button" onClick={clearPatient} className="text-slate-400 hover:text-slate-600">
+                <X size={16} />
+              </button>
             </div>
-            <span style={{ background: 'rgba(13,148,136,0.18)', color: 'var(--mv-teal-glow)', fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius-full)', border: '1px solid rgba(45,212,191,0.2)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Lock size={11} /> Encrypted
-            </span>
-          </div>
-
-          <div className="mv-card-body">
-            <form onSubmit={handleSubmit}>
-              <div className="mv-form-row">
-                <Input label="Patient Name" name="patientName" value={patientName}
-                  onChange={e => setPatientName(e.target.value)} placeholder="e.g. John Smith" />
-                <div className="mv-form-group">
-                  <label className="mv-label" htmlFor="reportType">Report Type</label>
-                  <select id="reportType" className="mv-select" value={reportType}
-                    onChange={e => setReportType(e.target.value)}>
-                    <option value="">Select type…</option>
-                    {['Lab Report','Radiology','Prescription','Discharge Summary','Consultation','Imaging','Other'].map(t =>
-                      <option key={t}>{t}</option>
-                    )}
-                  </select>
-                </div>
+          ) : (
+            <div className="relative">
+              {/* Search input */}
+              <div className="relative">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={e => { setSearchText(e.target.value); setShowDropdown(true); }}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder="Type name or patient ID to search…"
+                  className="w-full rounded-xl border border-slate-300 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                />
               </div>
 
-              {/* Drop zone */}
-              <div className="mv-form-group">
-                <label className="mv-label">Report File</label>
-                <div
-                  className={`mv-dropzone ${dragover ? 'dragover' : ''}`}
-                  onDragOver={e => { e.preventDefault(); setDragover(true); }}
-                  onDragLeave={() => setDragover(false)}
-                  onDrop={handleDrop}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg"
-                    style={{ display: 'none' }}
-                    onChange={e => handleFile(e.target.files?.[0])} />
-
-                  {file ? (
-                    <>
-                      <div className="mv-dropzone-icon" style={{ background: 'var(--mv-success-bg)', color: 'var(--mv-success)' }}>
-                        <FileText size={24} />
-                      </div>
-                      <p className="mv-dropzone-title" style={{ color: 'var(--mv-success)' }}>{file.name}</p>
-                      <p className="mv-dropzone-sub">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                      <button type="button" onClick={e => { e.stopPropagation(); setFile(null); }}
-                        className="mv-btn mv-btn-ghost mv-btn-sm" style={{ marginTop: 10, gap: 5 }}>
-                        <X size={13} /> Remove
-                      </button>
-                    </>
+              {/* Dropdown list */}
+              {showDropdown && (
+                <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-52 overflow-y-auto">
+                  {filtered.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-sm text-slate-400">
+                      {allPatients.length === 0 ? 'Loading patients…' : 'No patients found'}
+                    </div>
                   ) : (
-                    <>
-                      <div className="mv-dropzone-icon"><Upload size={24} /></div>
-                      <p className="mv-dropzone-title">Drop your file here, or click to browse</p>
-                      <p className="mv-dropzone-sub">PDF, PNG, JPG — max 10 MB</p>
-                    </>
+                    filtered.map(p => (
+                      <button
+                        key={p._id}
+                        type="button"
+                        onMouseDown={() => selectPatient(p)}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold flex-none">
+                          {p.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{p.name}</p>
+                          <p className="text-xs text-slate-400">{p.patientId} · {p.age}y · {p.gender}</p>
+                        </div>
+                      </button>
+                    ))
                   )}
                 </div>
-              </div>
-
-              <button type="submit"
-                className={`mv-btn mv-btn-primary mv-btn-lg mv-btn-full ${submitting ? 'mv-btn-loading' : ''}`}
-                disabled={submitting} style={{ marginTop: '0.5rem' }}>
-                {submitting ? <><span className="mv-spinner" /><span>Uploading…</span></> : <><Upload size={16} /> Upload Report</>}
-              </button>
-            </form>
-          </div>
+              )}
+            </div>
+          )}
+          {errors.patient && <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1"><AlertCircle size={12}/> {errors.patient}</p>}
         </div>
 
-        {/* Info tips */}
-        <div style={{ gridColumn: '1 / -1', maxWidth: 620 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.875rem' }}>
-            {[
-              { icon: '🔒', title: 'End-to-end encrypted', desc: 'All files are encrypted before transfer.' },
-              { icon: '📋', title: 'Accepted formats', desc: 'PDF, PNG, and JPG/JPEG files up to 10 MB.' },
-              { icon: '⚡', title: 'Instant processing', desc: 'Files are indexed and available right away.' },
-            ].map(tip => (
-              <div key={tip.title} style={{ background: 'var(--mv-white)', border: '1px solid var(--mv-border)', borderRadius: 'var(--radius-md)', padding: '1rem 1.125rem', boxShadow: 'var(--shadow-xs)' }}>
-                <div style={{ fontSize: '1.25rem', marginBottom: 6 }}>{tip.icon}</div>
-                <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: 'var(--mv-slate-dark)', marginBottom: 3 }}>{tip.title}</p>
-                <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', lineHeight: 1.55 }}>{tip.desc}</p>
-              </div>
-            ))}
-          </div>
+        {/* Report Name */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Report Name <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={reportName}
+            onChange={e => { setReportName(e.target.value); setErrors(p => ({...p, reportName: ''})); }}
+            placeholder="e.g., CBC Blood Panel – Jan 2025"
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          {errors.reportName && <p className="mt-1 text-xs text-rose-600">{errors.reportName}</p>}
         </div>
-      </div>
+
+        {/* Report Type */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Report Type <span className="text-rose-500">*</span>
+          </label>
+          <select
+            value={reportType}
+            onChange={e => { setReportType(e.target.value); setErrors(p => ({...p, reportType: ''})); }}
+            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">— Select type —</option>
+            {REPORT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          {errors.reportType && <p className="mt-1 text-xs text-rose-600">{errors.reportType}</p>}
+        </div>
+
+        {/* Report Date */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Report Date <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="date"
+            value={reportDate}
+            max={new Date().toISOString().split('T')[0]}
+            onChange={e => { setReportDate(e.target.value); setErrors(p => ({...p, reportDate: ''})); }}
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          {errors.reportDate && <p className="mt-1 text-xs text-rose-600">{errors.reportDate}</p>}
+        </div>
+
+        {/* Doctor / Lab Name */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">Doctor / Lab Name</label>
+          <input
+            type="text"
+            value={doctorName}
+            onChange={e => setDoctorName(e.target.value)}
+            placeholder="e.g., Dr. Sharma / PathCare Labs"
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+        </div>
+
+        {/* Notes */}
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Notes <span className="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={2}
+            placeholder="Any observations or additional context…"
+            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+          />
+        </div>
+
+        {/* File Upload */}
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+            Report File <span className="text-rose-500">*</span>
+          </label>
+          <input
+            id="report-file"
+            type="file"
+            accept={ACCEPTED}
+            onChange={e => { setFile(e.target.files?.[0] ?? null); setErrors(p => ({...p, file: ''})); }}
+            className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          <p className="mt-1 text-xs text-slate-400">PDF, JPG, PNG, WEBP, TIFF, DICOM, DOC/DOCX · Max 25 MB</p>
+          {errors.file && <p className="mt-1 text-xs text-rose-600">{errors.file}</p>}
+
+          {file && (
+            <div className="mt-2 flex items-center gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
+              <span className="font-medium truncate">{file.name}</span>
+              <span className="ml-auto text-slate-400 shrink-0">{fmtSize(file.size)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Progress */}
+        {progress > 0 && (
+          <div className="sm:col-span-2">
+            <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-full rounded-full bg-teal-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-1 text-right text-xs text-slate-400">
+              {progress < 100 ? `Uploading… ${progress}%` : 'Processing…'}
+            </p>
+          </div>
+        )}
+
+        {/* Submit */}
+        <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting && <Loader size={15} className="animate-spin" />}
+            {submitting ? 'Uploading to Cloud…' : 'Upload Report'}
+          </button>
+
+          {message.text && (
+            <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm flex-1 ${
+              message.ok
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                : 'border-rose-200 bg-rose-50 text-rose-800'
+            }`}>
+              {message.ok ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+              {message.text}
+            </div>
+          )}
+        </div>
+      </form>
     </div>
   );
 }

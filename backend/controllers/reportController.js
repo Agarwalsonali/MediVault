@@ -1,22 +1,33 @@
 import Report from "../models/report.js";
 import Patient from "../models/patient.js";
-import fs from "fs/promises";
-import path from "path";
+import cloudinary from "../utils/cloudinary.js";
 
-const UPLOADS_DIR = path.join(process.cwd(), "uploads", "reports");
-
-// Ensure uploads directory exists
-const ensureUploadsDir = async () => {
-  try {
-    await fs.access(UPLOADS_DIR);
-  } catch {
-    await fs.mkdir(UPLOADS_DIR, { recursive: true });
-  }
-};
+// Report type categories for real-world medical context
+const VALID_REPORT_TYPES = [
+  "Blood Test",
+  "Urine Test",
+  "X-Ray",
+  "MRI Scan",
+  "CT Scan",
+  "Ultrasound",
+  "ECG / EKG",
+  "Echocardiogram",
+  "Prescription",
+  "Discharge Summary",
+  "Pathology Report",
+  "Radiology Report",
+  "Vaccination Record",
+  "Allergy Test",
+  "COVID-19 Test",
+  "Biopsy Report",
+  "Dental Record",
+  "Ophthalmology Report",
+  "Other",
+];
 
 export const uploadReport = async (req, res) => {
   try {
-    const { patientId, reportName, reportType, reportDate, notes } = req.body;
+    const { patientId, reportName, reportType, reportDate, notes, doctorName } = req.body;
 
     if (!patientId || !reportName || !reportType || !reportDate) {
       return res.status(400).json({
@@ -25,50 +36,39 @@ export const uploadReport = async (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        message: "File is required",
-      });
+      return res.status(400).json({ message: "File is required" });
     }
 
-    // Verify patient exists and belongs to current user
-    const patient = await Patient.findOne({
-      _id: patientId,
-      createdBy: req.user.id,
-    });
-
+    // Verify patient belongs to current user
+    const patient = await Patient.findOne({ _id: patientId, createdBy: req.user.id });
     if (!patient) {
-      // Clean up uploaded file if patient not found
-      await fs.unlink(req.file.path);
-      return res.status(404).json({
-        message: "Patient not found or unauthorized",
-      });
+      // Delete the already-uploaded Cloudinary file
+      if (req.file.filename) {
+        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" }).catch(() => {});
+        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "image" }).catch(() => {});
+      }
+      return res.status(404).json({ message: "Patient not found or unauthorized" });
     }
 
-    await ensureUploadsDir();
+    // req.file.path is the Cloudinary secure URL (set by multer-storage-cloudinary)
+    const fileUrl = req.file.path;         // e.g. https://res.cloudinary.com/...
+    const publicId = req.file.filename;    // cloudinary public_id for deletion later
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const ext = path.extname(req.file.originalname);
-    const fileName = `${patientId}-${timestamp}${ext}`;
-    const filePath = path.join(UPLOADS_DIR, fileName);
-
-    // Move file to permanent location
-    await fs.rename(req.file.path, filePath);
-
-    // Create report record
     const report = await Report.create({
       patientId,
       uploadedBy: req.user.id,
-      reportName: reportName.trim(),
+      reportName:  reportName.trim(),
       reportType,
-      reportDate: new Date(reportDate),
-      fileUrl: `/uploads/reports/${fileName}`,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      notes: notes ? notes.trim() : "",
+      reportDate:  new Date(reportDate),
+      doctorName:  doctorName ? doctorName.trim() : "",
+      notes:       notes ? notes.trim() : "",
+      fileUrl,        // ← Cloudinary HTTPS link stored in MongoDB
+      publicId,       // ← for deletion from Cloudinary
+      fileName:    req.file.originalname,
+      fileSize:    req.file.size,
+      mimeType:    req.file.mimetype,
     });
 
-    // Populate patient and uploader info
     const populatedReport = await Report.findById(report._id)
       .populate("patientId", "name patientId gender age")
       .populate("uploadedBy", "fullName email");
@@ -78,14 +78,7 @@ export const uploadReport = async (req, res) => {
       report: populatedReport,
     });
   } catch (error) {
-    // Clean up file if error occurs
-    if (req.file) {
-      try {
-        await fs.unlink(req.file.path);
-      } catch (e) {
-        console.error("Error deleting temp file:", e);
-      }
-    }
+    console.error("uploadReport error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -94,28 +87,17 @@ export const getReportsByPatient = async (req, res) => {
   try {
     const { patientId } = req.params;
 
-    // Verify patient belongs to current user
-    const patient = await Patient.findOne({
-      _id: patientId,
-      createdBy: req.user.id,
-    });
-
+    const patient = await Patient.findOne({ _id: patientId, createdBy: req.user.id });
     if (!patient) {
-      return res.status(404).json({
-        message: "Patient not found or unauthorized",
-      });
+      return res.status(404).json({ message: "Patient not found or unauthorized" });
     }
 
     const reports = await Report.find({ patientId })
-      .select("_id reportName reportType reportDate fileName uploadedBy createdAt")
+      .select("_id reportName reportType reportDate fileName fileUrl mimeType uploadedBy doctorName notes createdAt")
       .populate("uploadedBy", "fullName")
-      .sort({ createdAt: -1 });
+      .sort({ reportDate: -1 });
 
-    res.status(200).json({
-      message: "Reports retrieved successfully",
-      count: reports.length,
-      reports,
-    });
+    res.status(200).json({ message: "Reports retrieved successfully", count: reports.length, reports });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -123,26 +105,13 @@ export const getReportsByPatient = async (req, res) => {
 
 export const getReportById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const report = await Report.findById(id)
+    const report = await Report.findById(req.params.id)
       .populate("patientId", "name patientId gender age")
       .populate("uploadedBy", "fullName email");
 
-    if (!report) {
-      return res.status(404).json({ message: "Report not found" });
-    }
+    if (!report) return res.status(404).json({ message: "Report not found" });
 
-    // Verify authorization
-    if (report.uploadedBy._id.toString() !== req.user.id && 
-        report.patientId.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    res.status(200).json({
-      message: "Report retrieved successfully",
-      report,
-    });
+    res.status(200).json({ message: "Report retrieved successfully", report });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -150,34 +119,24 @@ export const getReportById = async (req, res) => {
 
 export const deleteReport = async (req, res) => {
   try {
-    const { id } = req.params;
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: "Report not found" });
 
-    const report = await Report.findById(id);
-
-    if (!report) {
-      return res.status(404).json({ message: "Report not found" });
-    }
-
-    // Verify authorization
     if (report.uploadedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // Delete file
-    const filePath = path.join(process.cwd(), report.fileUrl.substring(1)); // Remove leading /
-    try {
-      await fs.unlink(filePath);
-    } catch (e) {
-      console.error("Error deleting file:", e);
+    // Delete from Cloudinary
+    if (report.publicId) {
+      await cloudinary.uploader.destroy(report.publicId, { resource_type: "image" }).catch(() => {});
+      await cloudinary.uploader.destroy(report.publicId, { resource_type: "raw" }).catch(() => {});
     }
 
-    // Delete report from database
-    await Report.deleteOne({ _id: id });
-
-    res.status(200).json({
-      message: "Report deleted successfully",
-    });
+    await Report.deleteOne({ _id: req.params.id });
+    res.status(200).json({ message: "Report deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+export { VALID_REPORT_TYPES };
