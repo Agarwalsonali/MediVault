@@ -11,7 +11,7 @@ const NAV_CONFIG = {
   Patient: [
     { to: '/dashboard',         icon: LayoutDashboard, label: 'Dashboard',     end: true },
     { to: '/dashboard/reports', icon: FileText,         label: 'My Reports' },
-    { to: '/dashboard/upload',  icon: Upload,           label: 'Upload Report' },
+    { to: '/dashboard/upload-report',  icon: Upload,           label: 'Upload Your Report' },
     { to: '/dashboard/profile', icon: User,             label: 'Profile' },
   ],
   Doctor: [
@@ -39,7 +39,8 @@ const NAV_CONFIG = {
 const PAGE_TITLES = {
   '/dashboard':             'Dashboard',
   '/dashboard/reports':     'My Reports',
-  '/dashboard/upload':      'Upload Report',
+  '/dashboard/upload':      'Upload Your Report',
+  '/dashboard/upload-report':'Upload Your Report',
   '/dashboard/profile':     'Profile',
   '/staff-dashboard':       'Staff Dashboard',
   '/staff-dashboard/upload':'Upload Report',
@@ -64,6 +65,8 @@ export default function DashboardLayout() {
   const user       = getUser();
   const navItems   = NAV_CONFIG[role] || NAV_CONFIG.Patient;
   const pageTitle  = PAGE_TITLES[location.pathname] || 'MediVault';
+  const isPatientUploadPage = location.pathname === '/dashboard/upload-report' || location.pathname === '/dashboard/upload';
+  const isPatientDashboardHome = role === 'Patient' && location.pathname === '/dashboard';
   const userInitials = initials(user?.fullName || user?.name);
 
   /* Close sidebar on route change */
@@ -179,7 +182,7 @@ export default function DashboardLayout() {
             <Menu size={20} />
           </button>
 
-          <h1 className="dash-topbar-title">{pageTitle}</h1>
+          <h1 className={`dash-topbar-title ${isPatientUploadPage ? 'patient-upload-topbar-title' : ''} ${isPatientDashboardHome ? 'patient-dashboard-mobile-no-title' : ''}`}>{pageTitle}</h1>
 
           <div className="dash-topbar-actions">
             <div style={{ position: 'relative' }}>

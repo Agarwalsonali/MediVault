@@ -7,6 +7,7 @@ import {
   getReportsByPatient,
   getReportById,
   deleteReport,
+  downloadReport,
 } from "../controllers/reportController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -68,6 +69,7 @@ const upload = multer({
 router.use(protect);
 
 router.post("/", upload.single("file"), uploadReport);
+router.get("/download/:id", downloadReport);
 router.get("/patient/:patientId", getReportsByPatient);
 router.get("/:id", getReportById);
 router.delete("/:id", deleteReport);

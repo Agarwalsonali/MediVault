@@ -41,7 +41,7 @@ const getItemsByRole = (role) => {
     items: [
       { to: '/dashboard',         label: 'Dashboard',     icon: IconDashboard, end: true },
       { to: '/dashboard/reports', label: 'Reports',       icon: IconReports },
-      { to: '/dashboard/upload',  label: 'Upload Report', icon: IconUpload },
+      { to: '/dashboard/upload-report',  label: 'Upload Your Report', icon: IconUpload },
       { to: '/dashboard/profile', label: 'Profile',       icon: IconProfile },
     ],
   };

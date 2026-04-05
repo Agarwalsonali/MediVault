@@ -60,12 +60,27 @@ export default function StaffDashboard() {
     <div className="dash-page space-y-4 sm:space-y-6">
 
       {/* ── Desktop Intro Banner ── */}
-      <div className="hidden lg:block bg-linear-to-br from-sky-600 to-blue-700 rounded-2xl p-6 text-white">
-        <p className="text-sky-200 text-sm font-medium">{greeting}</p>
-        <h1 className="text-2xl font-bold mt-0.5">{staffName} 👋</h1>
-        <p className="text-sky-100 text-sm mt-1">
+      <div
+        className="hidden lg:block rounded-2xl p-6 text-white"
+        style={{
+          background: 'linear-gradient(120deg, var(--mv-navy) 0%, var(--mv-navy-soft) 60%, #1a3a5c 100%)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ position: 'absolute', top: -50, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(13,148,136,0.12)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -60, right: 140, width: 120, height: 120, borderRadius: '50%', background: 'rgba(45,212,191,0.08)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(45,212,191,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(45,212,191,0.04) 1px,transparent 1px)', backgroundSize: '36px 36px', pointerEvents: 'none' }} />
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <p style={{ color: 'var(--mv-teal-glow)' }} className="text-sm font-medium">{greeting}</p>
+          <h1 className="text-2xl font-bold mt-0.5" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.25)' }}>
+            {staffName} 👋
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.65)' }}>
           {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+          </p>
+        </div>
       </div>
 
       {/* ── Error ── */}

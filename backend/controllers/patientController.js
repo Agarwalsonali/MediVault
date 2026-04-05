@@ -1,8 +1,17 @@
 import Patient from "../models/patient.js";
 
+const STAFF_OR_ADMIN_ROLES = ["Admin", "Doctor", "Nurse", "Staff"];
+
+const canViewAllPatients = (role) => STAFF_OR_ADMIN_ROLES.includes(role);
+
+const getPatientAccessFilter = (req) => {
+  if (canViewAllPatients(req.user?.role)) return {};
+  return { createdBy: req.user.id };
+};
+
 export const getAllPatients = async (req, res) => {
   try {
-    const patients = await Patient.find({ createdBy: req.user.id })
+    const patients = await Patient.find(getPatientAccessFilter(req))
       .select("_id name age gender patientId createdAt")
       .sort({ createdAt: -1 });
 
@@ -19,9 +28,10 @@ export const getAllPatients = async (req, res) => {
 export const searchPatients = async (req, res) => {
   try {
     const { query } = req.query;
+    const accessFilter = getPatientAccessFilter(req);
 
     if (!query || query.trim().length === 0) {
-      const patients = await Patient.find({ createdBy: req.user.id })
+      const patients = await Patient.find(accessFilter)
         .select("_id name age gender patientId")
         .limit(10)
         .sort({ createdAt: -1 });
@@ -33,7 +43,7 @@ export const searchPatients = async (req, res) => {
 
     const searchQuery = query.trim().toLowerCase();
     const patients = await Patient.find({
-      createdBy: req.user.id,
+      ...accessFilter,
       $or: [
         { name: { $regex: searchQuery, $options: "i" } },
         { patientId: { $regex: searchQuery, $options: "i" } },
@@ -112,8 +122,9 @@ export const createPatient = async (req, res) => {
 export const getPatientById = async (req, res) => {
   try {
     const { id } = req.params;
+    const accessFilter = getPatientAccessFilter(req);
 
-    const patient = await Patient.findById(id).select("_id name age gender patientId createdAt");
+    const patient = await Patient.findOne({ _id: id, ...accessFilter }).select("_id name age gender patientId createdAt");
 
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });

@@ -81,6 +81,32 @@ const userSchema = new mongoose.Schema({
   isInviteAccepted: {
     type: Boolean,
     default: false
+  },
+
+  // Patient profile fields (optional for all users, but mainly used for Patient role)
+  age: {
+    type: Number,
+    min: 0,
+    max: 150,
+    default: null
+  },
+
+  gender: {
+    type: String,
+    enum: [null, "Male", "Female", "Other"],
+    default: null
+  },
+
+  bloodGroup: {
+    type: String,
+    enum: [null, "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+    default: null
+  },
+
+  allergies: {
+    type: String,
+    trim: true,
+    default: ""
   }
 
 }, { timestamps: true });

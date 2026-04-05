@@ -25,6 +25,12 @@ const VALID_REPORT_TYPES = [
   "Other",
 ];
 
+const mapUploaderRole = (role) => {
+  if (role === "Admin") return "ADMIN";
+  if (role === "Patient") return "PATIENT";
+  return "STAFF";
+};
+
 export const uploadReport = async (req, res) => {
   try {
     const { patientId, reportName, reportType, reportDate, notes, doctorName } = req.body;
@@ -54,9 +60,14 @@ export const uploadReport = async (req, res) => {
     const fileUrl = req.file.path;         // e.g. https://res.cloudinary.com/...
     const publicId = req.file.filename;    // cloudinary public_id for deletion later
 
+    const uploaderRole = mapUploaderRole(req.user?.role);
+
     const report = await Report.create({
       patientId,
       uploadedBy: req.user.id,
+      uploadedByRole: uploaderRole,
+      uploaded_by: uploaderRole,
+      verified: req.user?.role === "Admin" || req.user?.role === "Doctor" || req.user?.role === "Nurse" || req.user?.role === "Staff",
       reportName:  reportName.trim(),
       reportType,
       reportDate:  new Date(reportDate),
@@ -93,7 +104,7 @@ export const getReportsByPatient = async (req, res) => {
     }
 
     const reports = await Report.find({ patientId })
-      .select("_id reportName reportType reportDate fileName fileUrl mimeType uploadedBy doctorName notes createdAt")
+      .select("_id reportName reportType reportDate fileName fileUrl mimeType uploadedBy uploadedByRole uploaded_by verified doctorName notes createdAt")
       .populate("uploadedBy", "fullName")
       .sort({ reportDate: -1 });
 
@@ -134,6 +145,39 @@ export const deleteReport = async (req, res) => {
 
     await Report.deleteOne({ _id: req.params.id });
     res.status(200).json({ message: "Report deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const downloadReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id).populate("patientId");
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Security check: User must be the uploader OR the patient who owns this report
+    const isUploader = report.uploadedBy.toString() === req.user.id;
+    const isPatientOwner = report.patientId && report.patientId.createdBy?.toString() === req.user.id;
+
+    if (!isUploader && !isPatientOwner) {
+      return res.status(403).json({ message: "Unauthorized: You don't have access to this report" });
+    }
+
+    // Return the file URL and metadata (frontend will handle the download)
+    res.status(200).json({
+      message: "Download authorized",
+      download: {
+        _id: report._id,
+        fileName: report.fileName,
+        fileUrl: report.fileUrl,
+        reportName: report.reportName,
+        mimeType: report.mimeType,
+        fileSize: report.fileSize
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

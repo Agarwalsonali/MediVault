@@ -1303,8 +1303,54 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 768px) {
+  .dash-topbar {
+    height: 56px;
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .dash-topbar-title {
+    font-size: 1rem;
+  }
+
+  .patient-dashboard-mobile-no-title {
+    display: none !important;
+  }
+
+  .dash-topbar-hamburger,
+  .dash-topbar-btn,
+  .dash-topbar-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dash-topbar-actions {
+    gap: 6px;
+  }
+
+  .dash-sidebar {
+    width: 232px;
+  }
+
+  .dash-sidebar-brand {
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .dash-sidebar-section {
+    padding: 0.9rem 0.6rem 0.4rem;
+  }
+
+  .dash-nav-item {
+    padding: 9px 10px;
+    font-size: 0.86rem;
+  }
+
+  .dash-sidebar-user {
+    padding: 0.8rem 0.6rem;
+  }
+
   .dash-page {
-    padding: 1.25rem 1rem;
+    padding: 1rem 0.85rem;
   }
 
   .stat-grid {
@@ -1371,6 +1417,89 @@ h1, h2, h3, h4, h5, h6 {
 .profile-avatar-edit:hover {
   border-color: var(--mv-teal);
   background: var(--mv-teal-50);
+}
+
+/* ── PATIENT UPLOAD PAGE ── */
+@media (min-width: 1025px) {
+  /* Hide topbar page title only for patient upload page in desktop layout */
+  .patient-upload-topbar-title {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Remove the above intro/header section on mobile as requested */
+  .patient-upload-intro {
+    display: none;
+  }
+
+  /* Reports page: hide top intro block (title + summary cards) on mobile */
+  .reports-top-intro {
+    display: none !important;
+  }
+
+  .patient-upload-body {
+    padding: 1rem;
+  }
+
+  .patient-upload-body .mv-input,
+  .patient-upload-body .mv-select,
+  .patient-upload-body .mv-textarea {
+    font-size: 0.9rem;
+  }
+
+  .patient-upload-body .mv-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Profile page mobile responsiveness */
+.profile-email {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.profile-action-buttons .mv-btn {
+  min-height: 40px;
+}
+
+@media (max-width: 768px) {
+  .profile-complete-banner {
+    flex-direction: column;
+    gap: 0.75rem !important;
+  }
+
+  .profile-complete-banner .mv-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-avatar-card {
+    padding: 1rem !important;
+  }
+
+  .profile-name {
+    font-size: 1rem !important;
+    line-height: 1.3;
+  }
+
+  .profile-email {
+    font-size: 0.8rem !important;
+    line-height: 1.4;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .profile-action-buttons {
+    flex-direction: column-reverse !important;
+  }
+
+  .profile-action-buttons .mv-btn {
+    width: 100%;
+  }
 }
 
 /* ── EMPTY STATES ── */

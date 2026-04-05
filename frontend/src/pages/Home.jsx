@@ -441,9 +441,19 @@ export default function Home() {
           text-align: center; margin-bottom: 56px;
         }
         .mv-section-tag {
-          display: inline-block; font-size: 0.75rem; font-weight: 600;
-          letter-spacing: 0.08em; text-transform: uppercase;
-          color: var(--teal); margin-bottom: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--teal);
+          background: var(--teal-dim);
+          border: 1px solid rgba(0,194,168,0.25);
+          padding: 6px 14px;
+          border-radius: 999px;
+          margin-bottom: 12px;
         }
         .mv-section-title {
           font-size: clamp(1.6rem, 3.5vw, 2.4rem);
@@ -814,6 +824,11 @@ export default function Home() {
             margin-top: 56px;
           }
 
+          .mv-section-tag {
+            font-size: 0.73rem;
+            padding: 6px 12px;
+          }
+
           .mv-cta-btns {
             flex-direction: column;
           }
@@ -961,7 +976,7 @@ export default function Home() {
         {/* ── Features ── */}
         <div className="mv-section" ref={featuresRef}>
           <div className="mv-section-label">
-            <span className="mv-section-tag">Core Capabilities</span>
+            <span className="mv-section-tag"><Sparkles size={13} /> Core Capabilities</span>
             <h2 className="mv-section-title">Everything your team needs</h2>
             <p className="mv-section-sub">
               Built for hospitals and clinics that demand reliability, security, and speed in one place.
@@ -996,7 +1011,7 @@ export default function Home() {
         {/* ── Support & Help Center ── */}
         <section id="support-help-center" className="mv-contact-section">
           <div className="mv-section-label">
-            <span className="mv-section-tag">Get in Touch</span>
+            <span className="mv-section-tag"><Send size={13} /> Get in Touch</span>
             <h2 className="mv-section-title">
               We&apos;re here to <span className="accent">help you</span>
             </h2>
@@ -1029,7 +1044,7 @@ export default function Home() {
                 <div className="mv-contact-icon"><MapPin size={16} /></div>
                 <div>
                   <p className="label">Office</p>
-                  <p className="value">Sector 62, Noida</p>
+                  <p className="value">Kota, Rajasthan</p>
                   <p className="hint">India</p>
                 </div>
               </div>

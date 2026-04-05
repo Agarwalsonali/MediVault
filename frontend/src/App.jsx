@@ -15,6 +15,7 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import DashboardHome from './pages/DashboardHome.jsx';
 import Reports from './pages/Reports.jsx';
 import UploadReport from './pages/UploadReport.jsx';
+import PatientUploadReport from './pages/PatientUploadReport.jsx';
 import Profile from './pages/Profile.jsx';
 import StaffDashboard from './pages/StaffDashboard.jsx';
 import StaffProfile from './pages/StaffProfile.jsx';
@@ -105,7 +106,8 @@ function App() {
           >
             <Route index element={<DashboardHome />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="upload" element={<UploadReport />} />
+            <Route path="upload" element={<PatientUploadReport />} />
+            <Route path="upload-report" element={<PatientUploadReport />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 

@@ -8,8 +8,11 @@ import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import patientReportRoutes from "./routes/patientReportRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -39,6 +42,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/patient", patientReportRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

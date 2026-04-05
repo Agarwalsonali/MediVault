@@ -19,6 +19,8 @@ export default function UploadReport() {
   const [searchText, setSearchText]         = useState('');
   const [showDropdown, setShowDropdown]     = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [patientsLoading, setPatientsLoading] = useState(true);
+  const [patientsLoadError, setPatientsLoadError] = useState('');
   const searchRef = useRef(null);
 
   // Form state
@@ -37,9 +39,17 @@ export default function UploadReport() {
 
   // Load patients once
   useEffect(() => {
+    setPatientsLoading(true);
     getPatients()
-      .then(data => setAllPatients(data || []))
-      .catch(() => {});
+      .then(data => {
+        setAllPatients(data || []);
+        setPatientsLoadError('');
+      })
+      .catch((err) => {
+        setAllPatients([]);
+        setPatientsLoadError(err?.message || 'Failed to load patients');
+      })
+      .finally(() => setPatientsLoading(false));
   }, []);
 
   // Close dropdown on outside click
@@ -105,7 +115,7 @@ export default function UploadReport() {
     setProgress(10);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('mrms_jwt');
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -202,9 +212,13 @@ export default function UploadReport() {
               {/* Dropdown list */}
               {showDropdown && (
                 <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg max-h-52 overflow-y-auto">
-                  {filtered.length === 0 ? (
+                  {patientsLoading ? (
+                    <div className="px-4 py-6 text-center text-sm text-slate-400">Loading patients…</div>
+                  ) : patientsLoadError ? (
+                    <div className="px-4 py-6 text-center text-sm text-rose-500">{patientsLoadError}</div>
+                  ) : filtered.length === 0 ? (
                     <div className="px-4 py-6 text-center text-sm text-slate-400">
-                      {allPatients.length === 0 ? 'Loading patients…' : 'No patients found'}
+                      No patients found
                     </div>
                   ) : (
                     filtered.map(p => (
