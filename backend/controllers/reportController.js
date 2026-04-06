@@ -26,6 +26,10 @@ const VALID_REPORT_TYPES = [
   "Other",
 ];
 
+const STAFF_OR_ADMIN_ROLES = ["Admin", "Doctor", "Nurse", "Staff"];
+
+const canViewAllPatients = (role) => STAFF_OR_ADMIN_ROLES.includes(role);
+
 const mapUploaderRole = (role) => {
   if (role === "Admin") return "ADMIN";
   if (role === "Patient") return "PATIENT";
@@ -46,8 +50,14 @@ export const uploadReport = async (req, res) => {
       return res.status(400).json({ message: "File is required" });
     }
 
-    // Verify patient belongs to current user
-    const patient = await Patient.findOne({ _id: patientId, createdBy: req.user.id });
+    // Verify patient exists and user has access
+    let patientFilter = { _id: patientId };
+    if (!canViewAllPatients(req.user?.role)) {
+      // Non-staff users can only upload for their own patients
+      patientFilter.createdBy = req.user.id;
+    }
+    
+    const patient = await Patient.findOne(patientFilter);
     if (!patient) {
       // Delete the already-uploaded Cloudinary file
       if (req.file.filename) {
@@ -124,6 +134,38 @@ export const getReportById = async (req, res) => {
     if (!report) return res.status(404).json({ message: "Report not found" });
 
     res.status(200).json({ message: "Report retrieved successfully", report });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getAllReports = async (req, res) => {
+  try {
+    const isStaff = ["Admin", "Doctor", "Nurse", "Staff"].includes(req.user?.role);
+    
+    let query;
+    if (isStaff) {
+      // Staff can see all reports
+      query = Report.find();
+    } else {
+      // Non-staff users can only see reports for their own patients
+      const userPatients = await Patient.find({ createdBy: req.user.id }).select("_id");
+      const patientIds = userPatients.map(p => p._id);
+      query = Report.find({ patientId: { $in: patientIds } });
+    }
+
+    const reports = await query
+      .select("_id reportName reportType reportDate fileName fileUrl uploadedBy uploadedByRole verified doctorName createdAt")
+      .populate("patientId", "name patientId gender age")
+      .populate("uploadedBy", "fullName email")
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.status(200).json({ 
+      message: "Reports retrieved successfully", 
+      count: reports.length, 
+      reports 
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

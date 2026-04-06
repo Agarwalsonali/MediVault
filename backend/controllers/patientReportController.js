@@ -194,13 +194,14 @@ export const deleteOwnPatientReport = async (req, res) => {
       return res.status(404).json({ message: "Report not found" });
     }
 
+    // Check if this report belongs to the patient's record
     const isOwnerPatient = report.patientId.toString() === patient._id.toString();
-    const isSelfUploaded = report.uploadedBy.toString() === req.user.id && report.uploadedByRole === "PATIENT";
 
-    if (!isOwnerPatient || !isSelfUploaded) {
-      return res.status(403).json({ message: "You can delete only your own self-uploaded reports" });
+    if (!isOwnerPatient) {
+      return res.status(403).json({ message: "You can only delete reports from your own patient record" });
     }
 
+    // Delete from Cloudinary
     if (report.publicId) {
       await cloudinary.uploader.destroy(report.publicId, { resource_type: "image" }).catch(() => {});
       await cloudinary.uploader.destroy(report.publicId, { resource_type: "raw" }).catch(() => {});

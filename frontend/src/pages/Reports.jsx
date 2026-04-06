@@ -112,7 +112,7 @@ export default function Reports() {
   };
 
   const handleDelete = async (reportId) => {
-    const confirmed = window.confirm('Delete this self-uploaded report?');
+    const confirmed = window.confirm('Are you sure you want to delete this report? This action cannot be undone.');
     if (!confirmed) return;
 
     try {
@@ -267,17 +267,15 @@ export default function Reports() {
                         >
                           <Download size={14} />
                         </button>
-                        {getUploaderTag(r) === 'PATIENT' && (
-                          <button
-                            onClick={() => handleDelete(r._id)}
-                            disabled={deleting === r._id}
-                            className="mv-btn mv-btn-ghost mv-btn-sm"
-                            title="Delete"
-                            style={{ padding: '0 10px' }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleDelete(r._id)}
+                          disabled={deleting === r._id}
+                          className="mv-btn mv-btn-ghost mv-btn-sm"
+                          title="Delete"
+                          style={{ padding: '0 10px' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -116,10 +116,11 @@ export default function UploadReport() {
 
     try {
       const token = localStorage.getItem('mrms_jwt');
+      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/+$/, '') + '/reports';
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/reports');
+        xhr.open('POST', apiUrl);
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
         xhr.upload.onprogress = (ev) => {

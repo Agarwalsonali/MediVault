@@ -5,6 +5,20 @@ const API_BASE_URL = RAW_API_URL || '/api';
 
 const API_URL = `${API_BASE_URL}/reports`;
 
+export const getAllReports = async () => {
+  try {
+    const token = localStorage.getItem('mrms_jwt');
+    const response = await axios.get(API_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.reports || [];
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch reports' };
+  }
+};
+
 export const uploadReport = async (formData) => {
   try {
     const token = localStorage.getItem('mrms_jwt');

@@ -6,11 +6,13 @@ import {
   ArrowRight, Activity
 } from 'lucide-react';
 import { getPatients } from '../services/patientService.js';
+import { getAllReports } from '../services/reportService.js';
 import { getUser } from '../utils/getUser.js';
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
   const [patients, setPatients]       = useState([]);
+  const [reports, setReports]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
   const [search, setSearch]           = useState('');
@@ -22,16 +24,29 @@ export default function StaffDashboard() {
     else if (hour < 17) setGreeting('Good afternoon');
     else                setGreeting('Good evening');
 
-    getPatients()
-      .then(data => setPatients(data || []))
-      .catch(err => setError(err.message || 'Failed to load patients'))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [patientData, reportData] = await Promise.all([
+          getPatients().catch(() => []),
+          getAllReports().catch(() => [])
+        ]);
+        setPatients(patientData || []);
+        setReports(reportData || []);
+        setError('');
+      } catch (err) {
+        setError(err?.message || 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const user = getUser();
   const staffName = user?.fullName || user?.name || user?.username || 'Staff';
 
-  // Derive quick stats from patient data
+  // Derive quick stats from patient and report data
   const totalPatients  = patients.length;
   const recentPatients = patients.filter(p => {
     const created = new Date(p.createdAt);
@@ -39,6 +54,18 @@ export default function StaffDashboard() {
     weekAgo.setDate(weekAgo.getDate() - 7);
     return created >= weekAgo;
   }).length;
+
+  // Reports Today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const reportsToday = reports.filter(r => {
+    const reportDate = new Date(r.createdAt);
+    reportDate.setHours(0, 0, 0, 0);
+    return reportDate.getTime() === today.getTime();
+  }).length;
+
+  // Active Records (patients with reports)
+  const patientsWithReports = new Set(reports.map(r => r.patientId?._id)).size;
 
   const filteredPatients = patients.filter(p =>
     p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,15 +135,16 @@ export default function StaffDashboard() {
         <StatCard
           icon={<FileText size={20} />}
           label="Reports Today"
-          value="—"
+          value={reportsToday}
           color="violet"
-          sub="View in Reports"
+          sub={reportsToday > 0 ? `${reportsToday} uploaded` : 'No reports yet'}
         />
         <StatCard
           icon={<Activity size={20} />}
           label="Active Records"
-          value={totalPatients}
+          value={patientsWithReports}
           color="amber"
+          sub={`${patientsWithReports} patients`}
         />
       </div>
 
@@ -195,14 +223,44 @@ export default function StaffDashboard() {
         )}
       </div>
 
-      {/* ── Recent Activity (placeholder, wire up when you have activity API) ── */}
+      {/* ── Recent Activity ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <h2 className="font-bold text-slate-900 mb-4">Recent Activity</h2>
-        <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-          <Clock size={32} className="mb-2 opacity-40" />
-          <p className="text-sm">Activity feed coming soon.</p>
-          <p className="text-xs mt-0.5">Recent uploads and patient updates will appear here.</p>
-        </div>
+        
+        {reports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400">
+            <Clock size={32} className="mb-2 opacity-40" />
+            <p className="text-sm">No activity yet.</p>
+            <p className="text-xs mt-0.5">Recent uploads will appear here.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reports.slice(0, 5).map((report) => {
+              const uploadDate = new Date(report.createdAt);
+              const isToday = uploadDate.toDateString() === new Date().toDateString();
+              const timeStr = isToday 
+                ? uploadDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                : uploadDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              
+              return (
+                <div key={report._id} className="flex items-start gap-3 pb-3 border-b border-slate-50 last:border-0 last:pb-0">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center flex-none mt-0.5">
+                    <FileText size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">
+                      {report.reportName} · {report.reportType}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {report.patientId?.name} · By {report.uploadedBy?.fullName || 'Staff'}
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-400 flex-none">{timeStr}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </div>
