@@ -1,0 +1,1 @@
+{"ip":"::1","level":"http","message":"HTTP request completed","method":"POST","responseTimeMs":14.95,"service":"mrms-backend","statusCode":200,"timestamp":"2026-04-06T10:43:13.472Z","url":"/api/auth/logout","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36","userId":null}

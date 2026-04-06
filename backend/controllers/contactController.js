@@ -1,5 +1,6 @@
 import Contact from "../models/contact.js";
 import { sendSupportRequestNotificationEmail } from "../utils/sendEmail.js";
+import { contactLogger } from "../utils/logger.js";
 
 const ALLOWED_ROLES = ["Patient", "Staff"];
 const ALLOWED_ISSUE_TYPES = ["Bug", "Feedback", "Report Issue", "Other"];
@@ -65,7 +66,7 @@ export const createContactMessage = async (req, res) => {
         submittedAt: new Date().toLocaleString(),
       });
     } catch (emailError) {
-      console.error("Contact admin notification failed:", emailError.message);
+      contactLogger.error("Contact admin notification failed", { error: emailError.message });
       return res.status(502).json({
         message: "Message saved, but admin notification email failed. Please try again.",
       });

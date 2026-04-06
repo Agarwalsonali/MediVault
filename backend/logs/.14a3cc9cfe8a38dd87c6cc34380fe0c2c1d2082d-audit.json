@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\HP\\Desktop\\MRMS\\backend\\logs\\.14a3cc9cfe8a38dd87c6cc34380fe0c2c1d2082d-audit.json",
+    "files": [
+        {
+            "date": 1775471005530,
+            "name": "C:\\Users\\HP\\Desktop\\MRMS\\backend\\logs\\2026-04-06-email.log",
+            "hash": "73b6776733a7a3f038996b0abf2ddb1df3c2097228fa8a0b02cf7c83254875b2"
+        }
+    ],
+    "hashType": "sha256"
+}

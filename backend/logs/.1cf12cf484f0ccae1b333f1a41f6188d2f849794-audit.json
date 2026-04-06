@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\HP\\Desktop\\MRMS\\backend\\logs\\.1cf12cf484f0ccae1b333f1a41f6188d2f849794-audit.json",
+    "files": [
+        {
+            "date": 1775471005510,
+            "name": "C:\\Users\\HP\\Desktop\\MRMS\\backend\\logs\\2026-04-06-patient.log",
+            "hash": "e0a8d0c9d1e10604e0889a98b335496f53c7f2ae2cbb29aac511c73118fe6248"
+        }
+    ],
+    "hashType": "sha256"
+}

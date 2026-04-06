@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
+import { createFeatureLogger } from './logger.js';
+const configLogger = createFeatureLogger('config');
 
 // Load environment variables in this module
 dotenv.config();
@@ -9,8 +11,8 @@ const requiredEnvVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDIN
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
-  console.error('❌ Missing Cloudinary environment variables:', missingVars.join(', '));
-  console.error('Please ensure .env file contains all required Cloudinary credentials');
+  configLogger.error('Missing Cloudinary environment variables', { missingVars });
+  configLogger.error('Please ensure .env file contains all required Cloudinary credentials');
 }
 
 cloudinary.config({
@@ -20,7 +22,7 @@ cloudinary.config({
 });
 
 if (process.env.CLOUDINARY_CLOUD_NAME) {
-  console.log('✅ Cloudinary configured successfully');
+  configLogger.info('Cloudinary configured successfully');
 }
 
 export default cloudinary;

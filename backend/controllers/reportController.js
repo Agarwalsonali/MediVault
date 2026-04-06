@@ -1,6 +1,7 @@
 import Report from "../models/report.js";
 import Patient from "../models/patient.js";
 import cloudinary from "../utils/cloudinary.js";
+import { reportLogger } from "../utils/logger.js";
 
 // Report type categories for real-world medical context
 const VALID_REPORT_TYPES = [
@@ -89,7 +90,7 @@ export const uploadReport = async (req, res) => {
       report: populatedReport,
     });
   } catch (error) {
-    console.error("uploadReport error:", error);
+    reportLogger.error("uploadReport error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message });
   }
 };

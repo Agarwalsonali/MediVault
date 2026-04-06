@@ -1,5 +1,6 @@
 import User from "../models/user.js";
 import cloudinary from "../utils/cloudinary.js";
+import { profileLogger } from "../utils/logger.js";
 
 /**
  * Get logged-in patient's profile
@@ -133,17 +134,20 @@ export const uploadAvatar = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    console.log("🔵 Avatar upload started for user:", userId);
-    console.log("📦 File info:", req.file ? { filename: req.file.filename, path: req.file.path } : "No file");
+    profileLogger.info("Avatar upload started", { userId });
+    profileLogger.debug("Avatar file info", {
+      userId,
+      file: req.file ? { filename: req.file.filename, path: req.file.path } : null,
+    });
 
     if (!req.file) {
-      console.warn("⚠️ No file provided in request");
+      profileLogger.warn("Avatar upload attempted without file", { userId });
       return res.status(400).json({ message: "No file provided" });
     }
 
     // req.file.path is the Cloudinary secure URL
     const avatarUrl = req.file.path;
-    console.log("✅ Avatar URL from Cloudinary:", avatarUrl);
+    profileLogger.debug("Avatar URL received from Cloudinary", { userId, avatarUrl });
 
     // Update user avatar
     const updatedUser = await User.findByIdAndUpdate(
@@ -155,14 +159,14 @@ export const uploadAvatar = async (req, res) => {
     );
 
     if (!updatedUser) {
-      console.error("❌ User not found:", userId);
+      profileLogger.error("Avatar upload failed: user not found", { userId });
       return res.status(404).json({ message: "User not found" });
     }
 
     // Check if profile is complete
     const isProfileComplete = !!(updatedUser.age && updatedUser.gender && updatedUser.bloodGroup);
 
-    console.log("✅ Avatar uploaded successfully for user:", userId);
+    profileLogger.info("Avatar uploaded successfully", { userId });
     res.status(200).json({
       message: "Avatar uploaded successfully",
       profile: {
@@ -181,8 +185,7 @@ export const uploadAvatar = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ uploadAvatar error:", error.message);
-    console.error("Stack trace:", error.stack);
+    profileLogger.error("uploadAvatar error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: `Upload error: ${error.message}` });
   }
 };
@@ -195,18 +198,18 @@ export const deleteAvatar = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    console.log("🔵 Avatar deletion started for user:", userId);
+    profileLogger.info("Avatar deletion started", { userId });
 
     // Get current user to fetch avatar info
     const user = await User.findById(userId);
     
     if (!user) {
-      console.error("❌ User not found:", userId);
+      profileLogger.error("Avatar deletion failed: user not found", { userId });
       return res.status(404).json({ message: "User not found" });
     }
 
     if (!user.avatarUrl) {
-      console.warn("⚠️ No avatar to delete for user:", userId);
+      profileLogger.warn("Avatar deletion skipped: no avatar found", { userId });
       return res.status(400).json({ message: "No avatar to delete" });
     }
 
@@ -215,9 +218,9 @@ export const deleteAvatar = async (req, res) => {
       // Extract public_id from the URL if needed
       const publicId = `avatar-${userId}`;
       await cloudinary.uploader.destroy(publicId, { resource_type: "image" }).catch(() => {});
-      console.log("✅ Avatar deleted from Cloudinary");
+      profileLogger.info("Avatar deleted from Cloudinary", { userId, publicId });
     } catch (err) {
-      console.warn("⚠️ Could not delete avatar from Cloudinary:", err.message);
+      profileLogger.warn("Could not delete avatar from Cloudinary", { userId, error: err.message });
       // Continue anyway - we still want to update the user
     }
 
@@ -230,7 +233,7 @@ export const deleteAvatar = async (req, res) => {
       "fullName email age gender bloodGroup allergies role isVerified avatarUrl createdAt"
     );
 
-    console.log("✅ Avatar removed successfully for user:", userId);
+    profileLogger.info("Avatar removed successfully", { userId });
     res.status(200).json({
       message: "Avatar removed successfully",
       profile: {
@@ -249,8 +252,7 @@ export const deleteAvatar = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ deleteAvatar error:", error.message);
-    console.error("Stack trace:", error.stack);
+    profileLogger.error("deleteAvatar error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: `Delete error: ${error.message}` });
   }
 };

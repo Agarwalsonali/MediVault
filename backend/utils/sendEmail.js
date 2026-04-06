@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer'
+import { createFeatureLogger } from './logger.js';
+const emailLogger = createFeatureLogger('email');
 
 const createTransporter = () =>
   nodemailer.createTransport({
@@ -19,9 +21,9 @@ export const sendEmail = async (to, subject, text, html) => {
       text,
       html
     });
-    console.log("Email sent successfully to", to);
+    emailLogger.info("Email sent successfully", { to, subject });
   } catch (error) {
-    console.error("Email error:", error);
+    emailLogger.error("Email send failed", { to, subject, error: error.message, stack: error.stack });
     throw error;
   }
 };

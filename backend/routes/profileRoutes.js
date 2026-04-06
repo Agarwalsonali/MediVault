@@ -10,6 +10,7 @@ import {
   deleteAvatar
 } from "../controllers/profileController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
+import { profileLogger } from "../utils/logger.js";
 
 const router = express.Router();
 
@@ -66,7 +67,7 @@ router.put("/", updatePatientProfile);
 router.post("/avatar", (req, res, next) => {
   avatarUpload.single("avatar")(req, res, (err) => {
     if (err) {
-      console.error("Avatar upload error:", err.message);
+      profileLogger.error("Avatar upload middleware error", { error: err.message });
       return res.status(400).json({ message: `Upload failed: ${err.message}` });
     }
     next();

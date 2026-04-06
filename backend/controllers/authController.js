@@ -12,6 +12,7 @@ import {
 } from "../utils/sendEmail.js";
 import { generate6DigitOtp } from "../utils/otp.js";
 import { validatePassword } from "../utils/passwordValidator.js";
+import { authLogger } from "../utils/logger.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
 const AVATARS_DIR = path.join(process.cwd(), "uploads", "avatars");
@@ -331,7 +332,7 @@ export const createStaffAccount = async (req, res) => {
 
     const inviteLink = `${frontendBaseUrl.replace(/\/+$/, "")}/set-password?token=${inviteToken}`;
     if (String(process.env.LOG_INVITE_LINK || "false").toLowerCase() === "true") {
-      console.log(`[InviteLink] ${normalizedEmail} -> ${inviteLink}`);
+      authLogger.info("Staff invite link generated", { email: normalizedEmail, inviteLink });
     }
 
     const staffUser = await User.create({
