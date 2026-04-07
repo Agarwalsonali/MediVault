@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft, Activity } from 'lucide-react';
+import { Mail, ArrowLeft, Activity, Sun, Moon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { requestPasswordReset } from '../services/authService.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export default function ForgotPassword() {
   const [email, setEmail]     = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent]       = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +24,15 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative' }}>
+      <button
+        onClick={toggleTheme}
+        className="mv-btn mv-btn-ghost"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', padding: '8px 12px' }}
+      >
+        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
       <div style={{ width: '100%', maxWidth: 420 }} className="animate-scale-in">
 
         <div className="mv-card" style={{ borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem', boxShadow: 'var(--shadow-lg)' }}>

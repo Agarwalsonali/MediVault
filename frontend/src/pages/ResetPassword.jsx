@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Eye, EyeOff, Activity } from 'lucide-react';
+import { Lock, Eye, EyeOff, Activity, Sun, Moon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { resetPassword, getResetEmail } from '../services/authService.js';
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from '../utils/passwordValidator.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 const LEN = 6;
 
@@ -14,9 +15,11 @@ export default function ResetPassword() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [passwordErrors, setPasswordErrors] = useState([]);
+  const [showConf, setShowConf] = useState(false);
   const refs = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   /* Email from nav state or localStorage (set by requestPasswordReset) */
   const email = location.state?.email || getResetEmail() || '';
@@ -79,7 +82,15 @@ export default function ResetPassword() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative' }}>
+      <button
+        onClick={toggleTheme}
+        className="mv-btn mv-btn-ghost"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', padding: '8px 12px' }}
+      >
+        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
       <div style={{ width: '100%', maxWidth: 440 }} className="animate-scale-in">
 
         <div className="mv-card" style={{ borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem', boxShadow: 'var(--shadow-lg)' }}>

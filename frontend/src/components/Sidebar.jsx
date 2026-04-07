@@ -19,6 +19,9 @@ function IconStaff(props) {
 function IconShield(props) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 }
+function IconLogs(props) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 11H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2h-2m0-1V9a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v1m0 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-12a2 2 0 0 0-2-2"/><path d="M10 6h4"/><path d="M10 12h6"/><path d="M10 16h6"/><path d="M10 20h6"/></svg>;
+}
 
 const getItemsByRole = (role) => {
   if (role === 'Admin') return {
@@ -26,6 +29,7 @@ const getItemsByRole = (role) => {
     items: [
       { to: '/admin-dashboard', label: 'Dashboard',    icon: IconDashboard, end: true },
       { to: '/manage-staff',    label: 'Manage Staff', icon: IconStaff,     end: true },
+      { to: '/activity-log',    label: 'Activity Log', icon: IconLogs,      end: true },
       { to: '/admin-profile',   label: 'Profile',      icon: IconProfile,   end: true },
     ],
   };

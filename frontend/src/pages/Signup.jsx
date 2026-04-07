@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Activity } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Activity, Sun, Moon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { registerUser, getVerifyEmail } from '../services/authService.js';
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from '../utils/passwordValidator.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export default function Signup() {
   const [form, setForm]         = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
@@ -11,6 +12,7 @@ export default function Signup() {
   const [showConf, setShowConf]   = useState(false);
   const [loading, setLoading]     = useState(false);
   const [passwordErrors, setPasswordErrors] = useState([]);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -78,6 +80,16 @@ export default function Signup() {
       {/* ── Right form ── */}
       <div className="auth-form-panel">
         <div className="auth-form-card animate-fade-up">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+            <button
+              onClick={toggleTheme}
+              className="mv-btn mv-btn-ghost"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              style={{ padding: '6px 10px', minWidth: 'auto' }}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+          </div>
 
           <Link to="/" className="auth-form-mobile-brand" style={{ textDecoration: 'none' }}>
             <div className="auth-brand-icon" style={{ width: 36, height: 36 }}><Activity size={18} color="white" /></div>

@@ -22,8 +22,17 @@ import StaffProfile from './pages/StaffProfile.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ManageStaff from './pages/ManageStaff.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
+import ActivityLog from './pages/ActivityLog.jsx';
 import { getUser } from './utils/getUser.js';
 import { useSessionTimeout } from './hooks/useSessionTimeout.js';
+
+// Initialize theme on app start
+function initializeTheme() {
+  const storedTheme = localStorage.getItem('theme');
+  const theme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.style.colorScheme = theme;
+}
 
 const STAFF_ROLES = ['Nurse', 'Doctor', 'Staff'];
 const PATIENT_ROLES = ['Patient'];
@@ -71,6 +80,11 @@ function SessionTimeoutManager({ isAuthenticated, children }) {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!getToken());
   const [role, setRole] = useState(() => getUser()?.role || getRole());
+
+  // Initialize theme on app start
+  useEffect(() => {
+    initializeTheme();
+  }, []);
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -155,6 +169,17 @@ function App() {
             }
           >
             <Route index element={<AdminProfile />} />
+          </Route>
+
+          <Route
+            path="/activity-log"
+            element={
+              <AdminOnlyRoute>
+                <DashboardLayout />
+              </AdminOnlyRoute>
+            }
+          >
+            <Route index element={<ActivityLog />} />
           </Route>
 
           <Route

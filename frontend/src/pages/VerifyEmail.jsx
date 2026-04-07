@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, RotateCcw, Activity } from 'lucide-react';
+import { Mail, RotateCcw, Activity, Sun, Moon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { verifyEmail, resendVerificationOtp, getVerifyEmail } from '../services/authService.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 const LEN = 6;
 
@@ -14,6 +15,7 @@ export default function VerifyEmail() {
   const refs = useRef([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   /* Email from nav state or localStorage (set by registerUser) */
   const email = location.state?.email || getVerifyEmail() || '';
@@ -81,7 +83,15 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative' }}>
+      <button
+        onClick={toggleTheme}
+        className="mv-btn mv-btn-ghost"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', padding: '8px 12px' }}
+      >
+        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
       <div style={{ width: '100%', maxWidth: 420 }} className="animate-scale-in">
 
         <div className="mv-card" style={{ borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem', boxShadow: 'var(--shadow-lg)' }}>

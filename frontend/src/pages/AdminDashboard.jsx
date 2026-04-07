@@ -59,26 +59,6 @@ export default function AdminDashboard() {
     { title: 'Active Patients', value: stats.totalPatients.toString(), sub: 'Registered patients',          icon: <UserCheck size={22} />, cls: 'purple' },
   ];
 
-  const getActivityColor = (type) => {
-    if (type === 'staff_created') return 'var(--mv-teal)';
-    if (type === 'report_uploaded') return 'var(--mv-info)';
-    return 'var(--mv-slate)';
-  };
-
-  const getRelativeTime = (timestamp) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffMs = now - time;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  };
-
   return (
     <div className="dash-page">
       {/* Error display */}
@@ -133,6 +113,7 @@ export default function AdminDashboard() {
             {[
               { label: 'Manage Staff Accounts', sub: 'Create, edit or remove Nurse/Staff', path: '/manage-staff', cls: 'mv-btn-primary' },
               { label: 'View Admin Profile',     sub: 'Update your admin credentials',      path: '/admin-profile', cls: 'mv-btn-outline' },
+              { label: 'Activity Log',           sub: 'View all system activities',         path: '/activity-log', cls: 'mv-btn-outline' },
             ].map(a => (
               <button key={a.label} onClick={() => navigate(a.path)}
                 className={`mv-btn ${a.cls}`} style={{ height: 'auto', padding: '12px 16px', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', gap: 2 }}>
@@ -146,25 +127,41 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Activity Summary Card */}
         <div className="mv-card animate-fade-up" style={{ animationDelay: '400ms' }}>
-          <div className="mv-card-header"><p className="mv-card-title">Recent Activity</p></div>
-          <div className="mv-card-body" style={{ padding: '0.5rem 1.375rem' }}>
+          <div className="mv-card-header"><p className="mv-card-title">Activity Summary</p></div>
+          <div className="mv-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {stats.recentActivity && stats.recentActivity.length > 0 ? (
-              stats.recentActivity.map((a, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: i < stats.recentActivity.length - 1 ? '1px solid var(--mv-border)' : 'none' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: getActivityColor(a.type), flexShrink: 0, marginTop: 6 }} />
-                  <div>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--mv-slate-dark)', fontWeight: 500 }}>{a.text}</p>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 2 }}>{getRelativeTime(a.timestamp)}</p>
-                  </div>
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--mv-border)' }}>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--mv-slate)' }}>Recent Events</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--mv-teal)' }}>{stats.recentActivity.length}</span>
                 </div>
-              ))
+                <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', lineHeight: 1.6, margin: '0' }}>
+                  Latest system activities recorded in the past 24 hours. View the complete activity log for more details.
+                </p>
+              </>
             ) : (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--mv-slate)' }}>
-                <p style={{ fontSize: '0.875rem' }}>No recent activity</p>
-              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--mv-slate)', textAlign: 'center', margin: '12px 0' }}>No recent activity</p>
             )}
+            
+            <button
+              onClick={() => navigate('/activity-log')}
+              className="mv-btn mv-btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                height: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginTop: 'auto'
+              }}
+            >
+              View All Activities
+              <ArrowRight size={15} />
+            </button>
           </div>
         </div>
       </div>

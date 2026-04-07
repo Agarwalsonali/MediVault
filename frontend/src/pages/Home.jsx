@@ -19,8 +19,11 @@ import {
   MapPin,
   Clock,
   Dot,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { submitContactMessage } from '../services/contactService';
+import { useTheme } from '../hooks/useTheme.js';
 
 /* ─── Data ──────────────────────────────────────────────── */
 const FEATURES = [
@@ -127,6 +130,7 @@ export default function Home() {
   const [contactForm, setContactForm] = useState(CONTACT_INITIAL_STATE);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactStatus, setContactStatus] = useState({ type: '', message: '' });
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -180,6 +184,115 @@ export default function Home() {
           --radius: 16px;
           --radius-sm: 10px;
           --shadow-glow: 0 0 40px rgba(0,194,168,0.15);
+        }
+
+        /* Dark mode for Home page */
+        [data-theme="dark"] {
+          --bg: #1a202c !important;
+          --bg2: #2d3748 !important;
+          --surface: rgba(15,20,25,0.84) !important;
+          --border: rgba(255,255,255,0.12) !important;
+          --teal: #14b8a6 !important;
+          --teal-dim: rgba(20,184,166,0.12) !important;
+          --blue: #63b3ed !important;
+          --text: #e2e8f0 !important;
+          --muted: #cbd5e0 !important;
+          --shadow-glow: 0 0 40px rgba(20,184,166,0.15) !important;
+        }
+
+        /* Dark mode navbar fix */
+        [data-theme="dark"] .mv-nav.scrolled {
+          background: rgba(26, 32, 44, 0.90) !important;
+          border-color: rgba(255,255,255,0.12) !important;
+        }
+
+        /* Dark mode stat styling */
+        [data-theme="dark"] .mv-stat-value {
+          background: linear-gradient(135deg, var(--text), var(--teal)) !important;
+          -webkit-background-clip: text !important;
+          -webkit-text-fill-color: transparent !important;
+        }
+
+        /* Dark mode contact cards */
+        [data-theme="dark"] .mv-contact-card,
+        [data-theme="dark"] .mv-contact-form {
+          background: rgba(45, 55, 72, 0.6) !important;
+          border: 1px solid rgba(255,255,255,0.12) !important;
+          box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        [data-theme="dark"] .mv-contact-item {
+          background: rgba(45, 55, 72, 0.8) !important;
+          border: 1px solid rgba(255,255,255,0.12) !important;
+        }
+
+        [data-theme="dark"] .mv-contact-field,
+        [data-theme="dark"] .mv-contact-area,
+        [data-theme="dark"] .mv-contact-select {
+          background: rgba(26, 32, 44, 0.6) !important;
+          border: 1px solid rgba(255,255,255,0.12) !important;
+          color: var(--text) !important;
+        }
+
+        [data-theme="dark"] .mv-contact-field::placeholder,
+        [data-theme="dark"] .mv-contact-area::placeholder {
+          color: rgba(203, 213, 224, 0.5) !important;
+        }
+
+        [data-theme="dark"] .mv-contact-field:focus,
+        [data-theme="dark"] .mv-contact-area:focus,
+        [data-theme="dark"] .mv-contact-select:focus {
+          border-color: rgba(20, 184, 166, 0.65) !important;
+          box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2) !important;
+        }
+
+        [data-theme="dark"] .mv-contact-alert.success {
+          background: rgba(34, 197, 94, 0.15) !important;
+          border: 1px solid rgba(34, 197, 94, 0.35) !important;
+          color: #86efac !important;
+        }
+
+        [data-theme="dark"] .mv-contact-alert.error {
+          background: rgba(248, 113, 113, 0.15) !important;
+          border: 1px solid rgba(248, 113, 113, 0.35) !important;
+          color: #fca5a5 !important;
+        }
+
+        [data-theme="dark"] .mv-contact-status {
+          border: 1px solid rgba(20, 184, 166, 0.25) !important;
+          background: rgba(20, 184, 166, 0.08) !important;
+          color: var(--muted) !important;
+        }
+
+        /* Dark mode feature cards */
+        [data-theme="dark"] .mv-feature-card {
+          background: rgba(45, 55, 72, 0.5) !important;
+          border: 1px solid rgba(255,255,255,0.12) !important;
+        }
+
+        [data-theme="dark"] .mv-feature-card:hover {
+          border-color: rgba(20, 184, 166, 0.35) !important;
+          box-shadow: 0 14px 36px rgba(20, 184, 166, 0.15) !important;
+        }
+
+        /* Dark mode ticker */
+        [data-theme="dark"] .mv-ticker {
+          background: rgba(20, 184, 166, 0.03) !important;
+          border-top: 1px solid rgba(255,255,255,0.12) !important;
+          border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+        }
+
+        /* Dark mode CTA */
+        [data-theme="dark"] .mv-cta {
+          background: linear-gradient(135deg, rgba(20,184,166,0.08), rgba(99,179,237,0.06)) !important;
+          border: 1px solid rgba(20,184,166,0.18) !important;
+          box-shadow: 0 0 80px rgba(20,184,166,0.07) !important;
+        }
+
+        /* Dark mode footer */
+        [data-theme="dark"] .mv-footer {
+          border-top: 1px solid rgba(255,255,255,0.12) !important;
+          background: rgba(26, 32, 44, 0.5) !important;
         }
 
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -424,10 +537,10 @@ export default function Home() {
           transition: background 0.2s;
         }
         .mv-stat:last-child { border-right: none; }
-        .mv-stat:hover { background: rgba(0,194,168,0.05); }
+        .mv-stat:hover { background: var(--teal-dim); }
         .mv-stat-value {
           font-size: 1.8rem; font-weight: 700; letter-spacing: -0.03em;
-          background: linear-gradient(135deg, #fff, var(--teal));
+          background: linear-gradient(135deg, var(--text), var(--teal));
           -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .mv-stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
@@ -487,8 +600,8 @@ export default function Home() {
         }
         .mv-feature-card:hover {
           transform: translateY(-5px);
-          border-color: rgba(15,32,64,0.18);
-          box-shadow: 0 14px 36px rgba(15,32,64,0.14);
+          border-color: rgba(0,194,168,0.25);
+          box-shadow: 0 14px 36px rgba(0,194,168,0.15);
         }
         .mv-feature-card:hover::before { opacity: 1; }
         .mv-feature-icon {
@@ -901,6 +1014,14 @@ export default function Home() {
             <span className="mv-brand-name">MediVault</span>
           </Link>
           <nav className="mv-nav-actions">
+            <button
+              onClick={toggleTheme}
+              className="mv-btn mv-btn-ghost mv-btn-sm"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              style={{ padding: '8px 12px', minWidth: 'auto' }}
+            >
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
             <Link to="/login" className="mv-btn mv-btn-ghost mv-btn-sm">Sign In</Link>
             <Link to="/signup" className="mv-btn mv-btn-primary mv-btn-sm">
               Get Started <ArrowRight size={14} />

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, Eye, EyeOff, Activity, CheckCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, Activity, CheckCircle, Sun, Moon } from 'lucide-react';
 import { setPasswordFromInvite } from '../services/authService.js';
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from '../utils/passwordValidator.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export default function SetPassword() {
   const [password, setPassword] = useState('');
@@ -14,6 +15,7 @@ export default function SetPassword() {
   const [passwordErrors, setPasswordErrors] = useState([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { theme, toggleTheme } = useTheme();
   const token = searchParams.get('token') || '';
 
   const validation = validatePassword(password);
@@ -49,7 +51,15 @@ export default function SetPassword() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--mv-off-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative' }}>
+      <button
+        onClick={toggleTheme}
+        className="mv-btn mv-btn-ghost"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', padding: '8px 12px' }}
+      >
+        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+      </button>
       <div style={{ width: '100%', maxWidth: 420 }} className="animate-scale-in">
 
         <div className="mv-card" style={{ borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem', boxShadow: 'var(--shadow-lg)' }}>

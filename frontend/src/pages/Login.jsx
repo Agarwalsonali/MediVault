@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Activity } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Activity, Sun, Moon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loginUser, getDashboardPathByRole, getLoginEmail } from '../services/authService.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export default function Login() {
   const [form, setForm]       = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -77,12 +79,22 @@ export default function Login() {
         <div className="auth-form-card animate-fade-up">
 
           {/* Mobile brand */}
-          <Link to="/" className="auth-form-mobile-brand" style={{ textDecoration: 'none' }}>
-            <div className="auth-brand-icon" style={{ width: 36, height: 36 }}>
-              <Activity size={18} color="white" />
-            </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--mv-navy)' }}>MediVault</span>
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <Link to="/" className="auth-form-mobile-brand" style={{ textDecoration: 'none', marginBottom: 0 }}>
+              <div className="auth-brand-icon" style={{ width: 36, height: 36 }}>
+                <Activity size={18} color="white" />
+              </div>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--mv-navy)' }}>MediVault</span>
+            </Link>
+            <button
+              onClick={toggleTheme}
+              className="mv-btn mv-btn-ghost"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              style={{ padding: '6px 10px', minWidth: 'auto' }}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+          </div>
 
           <div className="auth-form-header">
             <h1 className="auth-form-title">Welcome back</h1>

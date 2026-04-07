@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Upload, User, Users,
-  Shield, LogOut, Menu, Bell, Activity, Stethoscope
+  Shield, LogOut, Menu, Bell, Activity, Stethoscope, ClipboardList, Sun, Moon
 } from 'lucide-react';
 import { getRole, logout } from '../services/authService.js';
 import { getUser } from '../utils/getUser.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 const NAV_CONFIG = {
   Patient: [
@@ -32,6 +33,7 @@ const NAV_CONFIG = {
   Admin: [
     { to: '/admin-dashboard', icon: LayoutDashboard, label: 'Dashboard',    end: true },
     { to: '/manage-staff',    icon: Users,           label: 'Manage Staff' },
+    { to: '/activity-log',    icon: ClipboardList,   label: 'Activity Log' },
     { to: '/admin-profile',   icon: Shield,          label: 'Admin Profile' },
   ],
 };
@@ -47,6 +49,7 @@ const PAGE_TITLES = {
   '/staff-dashboard/profile':'Staff Profile',
   '/admin-dashboard':       'Admin Dashboard',
   '/manage-staff':          'Manage Staff',
+  '/activity-log':          'Activity Log',
   '/admin-profile':         'Admin Profile',
 };
 
@@ -63,6 +66,7 @@ export default function DashboardLayout() {
   const location   = useLocation();
   const role       = getRole();
   const user       = getUser();
+  const { theme, toggleTheme } = useTheme();
   const navItems   = NAV_CONFIG[role] || NAV_CONFIG.Patient;
   const pageTitle  = PAGE_TITLES[location.pathname] || 'MediVault';
   const isPatientUploadPage = location.pathname === '/dashboard/upload-report' || location.pathname === '/dashboard/upload';
@@ -185,6 +189,15 @@ export default function DashboardLayout() {
           <h1 className={`dash-topbar-title ${isPatientUploadPage ? 'patient-upload-topbar-title' : ''} ${isPatientDashboardHome ? 'patient-dashboard-mobile-no-title' : ''}`}>{pageTitle}</h1>
 
           <div className="dash-topbar-actions">
+            <button
+              className="dash-topbar-btn"
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+            </button>
+
             <div style={{ position: 'relative' }}>
               <button
                 className="dash-topbar-btn"

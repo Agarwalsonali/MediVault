@@ -64,6 +64,38 @@ export default function ContactSection() {
     <>
       {/* ── scoped styles — only .cs-* classes, nothing global ── */}
       <style>{`
+        /* CSS Variables for Contact Section */
+        :root {
+          --cs-text: #fff;
+          --cs-text-muted: #7a8ba5;
+          --cs-border-light: rgba(255,255,255,.07);
+          --cs-border-lighter: rgba(255,255,255,.05);
+          --cs-bg-subtle: rgba(255,255,255,.03);
+          --cs-bg-darker: rgba(255,255,255,.04);
+          --cs-input-bg: rgba(255,255,255,.04);
+          --cs-input-border: rgba(255,255,255,.08);
+          --cs-input-text: #e8f0fe;
+          --cs-input-placeholder: rgba(122,139,165,.45);
+          --cs-primary: #00c2a8;
+          --cs-primary-dark: #00a896;
+        }
+
+        /* Dark mode overrides */
+        [data-theme="dark"] {
+          --cs-text: #e2e8f0 !important;
+          --cs-text-muted: #cbd5e0 !important;
+          --cs-border-light: rgba(255,255,255,.12) !important;
+          --cs-border-lighter: rgba(255,255,255,.08) !important;
+          --cs-bg-subtle: rgba(255,255,255,.05) !important;
+          --cs-bg-darker: rgba(255,255,255,.06) !important;
+          --cs-input-bg: rgba(255,255,255,.05) !important;
+          --cs-input-border: rgba(255,255,255,.12) !important;
+          --cs-input-text: #f0f4f8 !important;
+          --cs-input-placeholder: rgba(203,213,224,.45) !important;
+          --cs-primary: #14b8a6 !important;
+          --cs-primary-dark: #0d9488 !important;
+        }
+
         /* keyframes */
         @keyframes cs-shimmer  { 0%{background-position:-200% center} 100%{background-position:200% center} }
         @keyframes cs-pulse    { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.6)} }
@@ -78,7 +110,7 @@ export default function ContactSection() {
         .cs-wrap::before {
           content: '';
           position: absolute; top: 0; left: 8%; right: 8%; height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+          background: linear-gradient(90deg, transparent, var(--cs-border-light), transparent);
         }
 
         /* header */
@@ -86,19 +118,19 @@ export default function ContactSection() {
         .cs-badge {
           display: inline-flex; align-items: center; gap: 7px;
           font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-          color: var(--color-primary, #00c2a8);
+          color: var(--cs-primary);
           border: 1px solid rgba(0,194,168,.25);
           background: rgba(0,194,168,.08);
           padding: 5px 13px; border-radius: 999px; margin-bottom: 12px;
         }
         .cs-badge-dot {
           width: 6px; height: 6px; border-radius: 50%;
-          background: var(--color-primary, #00c2a8);
+          background: var(--cs-primary);
           animation: cs-pulse 2s ease-in-out infinite;
         }
         .cs-title {
           font-size: clamp(1.7rem,3.4vw,2.35rem);
-          font-weight: 700; letter-spacing: -.025em; line-height: 1.15; color: #fff;
+          font-weight: 700; letter-spacing: -.025em; line-height: 1.15; color: var(--cs-text);
           margin-bottom: 10px;
         }
         .cs-title em {
@@ -109,7 +141,7 @@ export default function ContactSection() {
           animation: cs-shimmer 4s linear infinite;
         }
         .cs-sub {
-          font-size: .93rem; color: var(--color-text-muted, #7a8ba5);
+          font-size: .93rem; color: var(--cs-text-muted);
           max-width: 420px; margin: 0 auto; line-height: 1.65;
         }
 
@@ -127,8 +159,8 @@ export default function ContactSection() {
         /* ── LEFT card ── */
         .cs-left {
           border-radius: 18px;
-          border: 1px solid rgba(255,255,255,.07);
-          background: rgba(255,255,255,.03);
+          border: 1px solid var(--cs-border-light);
+          background: var(--cs-bg-subtle);
           overflow: hidden;
           display: flex; flex-direction: column;
         }
@@ -137,14 +169,14 @@ export default function ContactSection() {
         .cs-cta {
           padding: 26px 24px 22px;
           background: linear-gradient(135deg, rgba(0,194,168,.08), rgba(59,130,246,.05));
-          border-bottom: 1px solid rgba(255,255,255,.06);
+          border-bottom: 1px solid var(--cs-border-lighter);
         }
         .cs-cta h3 {
-          font-size: 1.05rem; font-weight: 700; color: #fff;
+          font-size: 1.05rem; font-weight: 700; color: var(--cs-text);
           margin-bottom: 6px; line-height: 1.35;
         }
         .cs-cta p {
-          font-size: .82rem; color: var(--color-text-muted,#7a8ba5);
+          font-size: .82rem; color: var(--cs-text-muted);
           line-height: 1.6; margin-bottom: 16px;
         }
         .cs-cta-btns { display: flex; flex-direction: column; gap: 8px; }
@@ -157,42 +189,42 @@ export default function ContactSection() {
         .cs-info-row {
           display: flex; align-items: center; gap: 13px;
           padding: 14px 24px;
-          border-bottom: 1px solid rgba(255,255,255,.05);
+          border-bottom: 1px solid var(--cs-border-lighter);
           text-decoration: none; color: inherit;
           transition: background .18s;
         }
         .cs-info-row:last-child { border-bottom: none; }
-        .cs-info-row:hover { background: rgba(255,255,255,.03); }
+        .cs-info-row:hover { background: var(--cs-bg-subtle); }
         .cs-info-icon {
           width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
-          background: rgba(0,194,168,.10); color: var(--color-primary,#00c2a8);
+          background: rgba(0,194,168,.10); color: var(--cs-primary);
           transition: transform .2s;
         }
         .cs-info-row:hover .cs-info-icon { transform: scale(1.1); }
-        .cs-info-lbl { font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-muted,#7a8ba5); margin-bottom: 2px; }
-        .cs-info-val { font-size: .88rem; font-weight: 500; color: #e8f0fe; }
+        .cs-info-lbl { font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--cs-text-muted); margin-bottom: 2px; }
+        .cs-info-val { font-size: .88rem; font-weight: 500; color: var(--cs-input-text); }
 
         /* live badge */
         .cs-live {
           display: flex; align-items: center; gap: 9px;
           padding: 12px 24px;
           background: rgba(0,194,168,.05);
-          border-top: 1px solid rgba(255,255,255,.05);
+          border-top: 1px solid var(--cs-border-lighter);
         }
         .cs-live-dot {
           width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-          background: var(--color-primary,#00c2a8);
+          background: var(--cs-primary);
           box-shadow: 0 0 0 3px rgba(0,194,168,.2);
           animation: cs-pulse 2s ease-in-out infinite;
         }
-        .cs-live-txt { font-size: .78rem; font-weight: 500; color: var(--color-primary,#00c2a8); }
+        .cs-live-txt { font-size: .78rem; font-weight: 500; color: var(--cs-primary); }
 
         /* ── RIGHT form card ── */
         .cs-form-card {
           border-radius: 18px;
-          border: 1px solid rgba(255,255,255,.07);
-          background: rgba(255,255,255,.03);
+          border: 1px solid var(--cs-border-light);
+          background: var(--cs-bg-subtle);
           padding: clamp(22px,3.5vw,32px) clamp(20px,3.5vw,30px);
           position: relative; overflow: hidden;
         }
@@ -207,10 +239,10 @@ export default function ContactSection() {
 
         .cs-form-title {
           display: flex; align-items: center; gap: 8px;
-          font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px;
+          font-size: 1.05rem; font-weight: 700; color: var(--cs-text); margin-bottom: 4px;
         }
-        .cs-form-title svg { color: var(--color-primary,#00c2a8); }
-        .cs-form-desc { font-size: .82rem; color: var(--color-text-muted,#7a8ba5); margin-bottom: 20px; line-height: 1.55; }
+        .cs-form-title svg { color: var(--cs-primary); }
+        .cs-form-desc { font-size: .82rem; color: var(--cs-text-muted); margin-bottom: 20px; line-height: 1.55; }
 
         /* api error */
         .cs-api-err {
@@ -229,23 +261,23 @@ export default function ContactSection() {
         .cs-label {
           display: block; font-size: .68rem; font-weight: 700;
           letter-spacing: .06em; text-transform: uppercase;
-          color: var(--color-text-muted,#7a8ba5); margin-bottom: 5px;
+          color: var(--cs-text-muted); margin-bottom: 5px;
           transition: color .2s;
         }
-        .cs-field:focus-within .cs-label { color: var(--color-primary,#00c2a8); }
+        .cs-field:focus-within .cs-label { color: var(--cs-primary); }
 
         .cs-input, .cs-select, .cs-textarea {
           width: 100%;
-          background: rgba(255,255,255,.04);
-          border: 1px solid rgba(255,255,255,.08);
+          background: var(--cs-input-bg);
+          border: 1px solid var(--cs-input-border);
           border-radius: 9px; padding: 10px 12px;
-          color: #e8f0fe; font-family: inherit; font-size: .87rem;
+          color: var(--cs-input-text); font-family: inherit; font-size: .87rem;
           outline: none; resize: none; -webkit-appearance: none;
           transition: border-color .2s, box-shadow .2s, background .2s;
         }
-        .cs-input::placeholder,.cs-textarea::placeholder { color: rgba(122,139,165,.45); }
+        .cs-input::placeholder,.cs-textarea::placeholder { color: var(--cs-input-placeholder); }
         .cs-input:focus,.cs-select:focus,.cs-textarea:focus {
-          border-color: var(--color-primary,#00c2a8);
+          border-color: var(--cs-primary);
           box-shadow: 0 0 0 3px rgba(0,194,168,.12);
           background: rgba(0,194,168,.025);
         }
@@ -255,17 +287,17 @@ export default function ContactSection() {
           border-color: #f87171;
           box-shadow: 0 0 0 3px rgba(248,113,113,.10);
         }
-        .cs-select option { background: #0a1628; color: #e8f0fe; }
+        .cs-select option { background: #1a202c; color: var(--cs-input-text); }
         .cs-textarea { min-height: 106px; }
 
         .cs-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; min-height: 18px; }
         .cs-err { display: flex; align-items: center; gap: 4px; font-size: .71rem; color: #f87171; }
-        .cs-counter { font-size: .7rem; color: var(--color-text-muted,#7a8ba5); }
+        .cs-counter { font-size: .7rem; color: var(--cs-text-muted); }
 
         /* submit */
         .cs-submit {
           width: 100%; margin-top: 4px; padding: 12px 20px;
-          background: linear-gradient(135deg,#00c2a8,#00a896);
+          background: linear-gradient(135deg, var(--cs-primary), var(--cs-primary-dark));
           color: #03191c; font-family: inherit; font-size: .93rem; font-weight: 700;
           border: none; border-radius: 10px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -279,10 +311,10 @@ export default function ContactSection() {
 
         /* success */
         .cs-success { display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 16px;text-align:center; }
-        .cs-success-ring { width:64px;height:64px;border-radius:50%;background:rgba(0,194,168,.12);border:2px solid rgba(0,194,168,.35);display:flex;align-items:center;justify-content:center;color:var(--color-primary,#00c2a8);animation:cs-pop .45s cubic-bezier(.34,1.56,.64,1) both; }
-        .cs-success-title { font-size:1.15rem;font-weight:700;color:#fff; }
-        .cs-success-sub   { font-size:.84rem;color:var(--color-text-muted,#7a8ba5);max-width:280px;line-height:1.6; }
-        .cs-success-reset { font-size:.8rem;color:var(--color-primary,#00c2a8);cursor:pointer;background:none;border:none;font-family:inherit;text-decoration:underline;text-underline-offset:3px;margin-top:4px; }
+        .cs-success-ring { width:64px;height:64px;border-radius:50%;background:rgba(0,194,168,.12);border:2px solid rgba(0,194,168,.35);display:flex;align-items:center;justify-content:center;color:var(--cs-primary);animation:cs-pop .45s cubic-bezier(.34,1.56,.64,1) both; }
+        .cs-success-title { font-size:1.15rem;font-weight:700;color:var(--cs-text); }
+        .cs-success-sub   { font-size:.84rem;color:var(--cs-text-muted);max-width:280px;line-height:1.6; }
+        .cs-success-reset { font-size:.8rem;color:var(--cs-primary);cursor:pointer;background:none;border:none;font-family:inherit;text-decoration:underline;text-underline-offset:3px;margin-top:4px; }
       `}</style>
 
       <section className="cs-wrap animate-scale-in delay-300" id="contact">

@@ -63,6 +63,88 @@
   --t-slow:     350ms;
 }
 
+/* ── DARK MODE ── */
+[data-theme="dark"] {
+  /* Brand */
+  --mv-navy:       #0f1419 !important;
+  --mv-navy-mid:   #1a202c !important;
+  --mv-navy-soft:  #2d3748 !important;
+  --mv-teal:       #14b8a6 !important;
+  --mv-teal-light: #2dd4bf !important;
+  --mv-teal-glow:  #45f7d6 !important;
+  --mv-teal-pale:  #1d4a47 !important;
+  --mv-teal-50:    #0f3a37 !important;
+
+  /* Neutrals */
+  --mv-white:      #0f1419 !important;
+  --mv-off-white:  #1a202c !important;
+  --mv-mist:       #2d3748 !important;
+  --mv-border:     #4a5568 !important;
+  --mv-border-mid: #718096 !important;
+  --mv-slate:      #cbd5e0 !important;
+  --mv-slate-dark: #e2e8f0 !important;
+  --mv-slate-900:  #f7fafc !important;
+
+  /* Semantic */
+  --mv-success:    #48bb78 !important;
+  --mv-success-bg: #1c4620 !important;
+  --mv-warning:    #ed8936 !important;
+  --mv-warning-bg: #4a2c1a !important;
+  --mv-danger:     #fc8181 !important;
+  --mv-danger-bg:  #4a2626 !important;
+  --mv-info:       #63b3ed !important;
+  --mv-info-bg:    #1e3a5f !important;
+
+  /* Shadows */
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.3) !important;
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.3) !important;
+  --shadow:     0 4px 16px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.4) !important;
+  --shadow-md:  0 8px 28px rgba(0,0,0,0.6), 0 3px 10px rgba(0,0,0,0.4) !important;
+  --shadow-lg:  0 16px 48px rgba(0,0,0,0.7), 0 6px 18px rgba(0,0,0,0.5) !important;
+  --shadow-teal: 0 4px 20px rgba(20,184,166,0.3) !important;
+  --shadow-teal-lg: 0 8px 36px rgba(20,184,166,0.4) !important;
+}
+
+/* Dark mode explicit styles to ensure colors change */
+[data-theme="dark"] {
+  background-color: #1a202c !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] body {
+  background-color: #1a202c !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .mv-card,
+[data-theme="dark"] .auth-shell,
+[data-theme="dark"] .auth-form-panel,
+[data-theme="dark"] .dash-page {
+  background-color: var(--mv-white) !important;
+  color: var(--mv-slate-dark) !important;
+}
+
+[data-theme="dark"] .auth-hero-panel {
+  background-color: var(--mv-navy) !important;
+  color: var(--mv-white) !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--mv-white) !important;
+  color: var(--mv-slate-dark) !important;
+  border-color: var(--mv-border) !important;
+}
+
+[data-theme="dark"] button {
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .mv-btn {
+  transition: all 0.3s ease;
+}
+
 /* ── BASE RESET ── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -73,6 +155,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
@@ -81,6 +164,7 @@ body {
   color: var(--mv-slate-dark);
   line-height: 1.6;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ── TYPOGRAPHY ── */
@@ -92,6 +176,18 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.25;
   color: var(--mv-slate-900);
+}
+
+/* Smooth transitions for dark mode */
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth transitions for common elements */
+.mv-card, .mv-btn, input, textarea, select, button,
+.dash-sidebar, .dash-topbar, .mv-input, .mv-label,
+h1, h2, h3, h4, h5, h6, p, span, div, a {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* ─────────────────────────────────────────
