@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Users, UserCheck, Shield, ArrowRight, Activity, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Users, UserCheck, Shield, ArrowRight, Activity, TrendingUp, Loader, AlertCircle } from 'lucide-react';
+import { getDashboardStats } from '../services/adminService.js';
 
 const STATS = [
   { title: 'Total Staff',     value: '24', sub: 'Active Nurse + Staff accounts', icon: <Users size={22} />,     cls: 'teal'   },
@@ -17,9 +19,76 @@ const ACTIVITY = [
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalStaff: 0,
+    newStaffThisMonth: 0,
+    totalPatients: 0,
+    recentActivity: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardStats();
+        setStats(data);
+        setError('');
+      } catch (err) {
+        setError(err.message || 'Failed to load dashboard stats');
+        // Keep fallback values if API fails
+        setStats({
+          totalStaff: 24,
+          newStaffThisMonth: 6,
+          totalPatients: 142,
+          recentActivity: []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const dynamicStats = [
+    { title: 'Total Staff',     value: stats.totalStaff.toString(), sub: 'Active Nurse + Staff accounts', icon: <Users size={22} />,     cls: 'teal'   },
+    { title: 'New This Month',  value: stats.newStaffThisMonth.toString(),  sub: 'Recently onboarded',            icon: <TrendingUp size={22} />, cls: 'green'  },
+    { title: 'System Status',   value: 'Secure', sub: 'Role-based access is active', icon: <Shield size={22} />,  cls: 'blue'   },
+    { title: 'Active Patients', value: stats.totalPatients.toString(), sub: 'Registered patients',          icon: <UserCheck size={22} />, cls: 'purple' },
+  ];
+
+  const getActivityColor = (type) => {
+    if (type === 'staff_created') return 'var(--mv-teal)';
+    if (type === 'report_uploaded') return 'var(--mv-info)';
+    return 'var(--mv-slate)';
+  };
+
+  const getRelativeTime = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
 
   return (
     <div className="dash-page">
+      {/* Error display */}
+      {error && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-4">
+          <AlertCircle size={16} className="text-red-500 flex-none" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
       {/* Welcome banner */}
       <div className="animate-fade-up" style={{
         background: 'linear-gradient(120deg, var(--mv-navy) 0%, var(--mv-navy-soft) 100%)',
@@ -42,12 +111,12 @@ export default function AdminDashboard() {
 
       {/* Stats */}
       <div className="stat-grid">
-        {STATS.map((s, i) => (
+        {dynamicStats.map((s, i) => (
           <div key={s.title} className="stat-card animate-fade-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className={`stat-icon ${s.cls}`}>{s.icon}</div>
             <div className="stat-body">
               <p className="stat-label">{s.title}</p>
-              <p className="stat-value">{s.value}</p>
+              <p className="stat-value">{loading && i < 3 ? <Loader size={20} className="animate-spin" /> : s.value}</p>
               <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 3 }}>{s.sub}</p>
             </div>
           </div>
@@ -81,15 +150,21 @@ export default function AdminDashboard() {
         <div className="mv-card animate-fade-up" style={{ animationDelay: '400ms' }}>
           <div className="mv-card-header"><p className="mv-card-title">Recent Activity</p></div>
           <div className="mv-card-body" style={{ padding: '0.5rem 1.375rem' }}>
-            {ACTIVITY.map((a, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: i < ACTIVITY.length - 1 ? '1px solid var(--mv-border)' : 'none' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0, marginTop: 6 }} />
-                <div>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--mv-slate-dark)', fontWeight: 500 }}>{a.text}</p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 2 }}>{a.time}</p>
+            {stats.recentActivity && stats.recentActivity.length > 0 ? (
+              stats.recentActivity.map((a, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: i < stats.recentActivity.length - 1 ? '1px solid var(--mv-border)' : 'none' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: getActivityColor(a.type), flexShrink: 0, marginTop: 6 }} />
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--mv-slate-dark)', fontWeight: 500 }}>{a.text}</p>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 2 }}>{getRelativeTime(a.timestamp)}</p>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--mv-slate)' }}>
+                <p style={{ fontSize: '0.875rem' }}>No recent activity</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

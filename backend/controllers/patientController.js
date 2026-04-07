@@ -1,4 +1,5 @@
 import Patient from "../models/patient.js";
+import User from "../models/user.js";
 
 const STAFF_OR_ADMIN_ROLES = ["Admin", "Doctor", "Nurse", "Staff"];
 
@@ -133,6 +134,74 @@ export const getPatientById = async (req, res) => {
     res.status(200).json({
       message: "Patient retrieved successfully",
       patient,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all users with role = "Patient" (for staff to view/select patients)
+export const getAllPatientUsers = async (req, res) => {
+  try {
+    // Only staff/doctor/nurse/admin can view patient users
+    if (!canViewAllPatients(req.user?.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const patientUsers = await User.find({ role: "Patient" })
+      .select("_id fullName email age gender bloodGroup")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "Patient users retrieved successfully",
+      count: patientUsers.length,
+      patients: patientUsers,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Search users with role = "Patient" by ID or name
+export const searchPatientUsers = async (req, res) => {
+  try {
+    // Only staff/doctor/nurse/admin can search patient users
+    if (!canViewAllPatients(req.user?.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const { query } = req.query;
+
+    if (!query || query.trim().length === 0) {
+      const patientUsers = await User.find({ role: "Patient" })
+        .select("_id fullName email age gender bloodGroup")
+        .limit(10)
+        .sort({ createdAt: -1 });
+      return res.status(200).json({
+        message: "Patient users retrieved",
+        count: patientUsers.length,
+        patients: patientUsers,
+      });
+    }
+
+    const searchQuery = query.trim().toLowerCase();
+    
+    // Search by user ID or full name
+    const patientUsers = await User.find({
+      role: "Patient",
+      $or: [
+        { _id: { $regex: searchQuery, $options: "i" } },
+        { fullName: { $regex: searchQuery, $options: "i" } },
+      ],
+    })
+      .select("_id fullName email age gender bloodGroup")
+      .limit(20)
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "Search results",
+      count: patientUsers.length,
+      patients: patientUsers,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, CheckCircle, AlertCircle, Loader, User } from 'lucide-react';
-import { getPatients } from '../services/patientService.js';
+import { getAllPatientUsers } from '../services/patientService.js';
 
 
 const REPORT_TYPES = [
@@ -40,7 +40,7 @@ export default function UploadReport() {
   // Load patients once
   useEffect(() => {
     setPatientsLoading(true);
-    getPatients()
+    getAllPatientUsers()
       .then(data => {
         setAllPatients(data || []);
         setPatientsLoadError('');
@@ -67,13 +67,13 @@ export default function UploadReport() {
   const filtered = searchText.trim().length === 0
     ? allPatients
     : allPatients.filter(p =>
-        p.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-        p.patientId?.toLowerCase().includes(searchText.toLowerCase())
+        p.fullName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        p._id?.toLowerCase().includes(searchText.toLowerCase())
       );
 
   const selectPatient = (patient) => {
     setSelectedPatient(patient);
-    setSearchText(patient.name);
+    setSearchText(patient.fullName);
     setShowDropdown(false);
     setErrors(prev => ({ ...prev, patient: '' }));
   };
@@ -138,7 +138,7 @@ export default function UploadReport() {
       });
 
       setProgress(100);
-      setMessage({ text: `✓ Report uploaded successfully for ${selectedPatient.name}!`, ok: true });
+      setMessage({ text: `✓ Report uploaded successfully for ${selectedPatient.fullName}!`, ok: true });
 
       // Reset
       clearPatient();
@@ -185,11 +185,11 @@ export default function UploadReport() {
           {selectedPatient ? (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3">
               <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold flex-none">
-                {selectedPatient.name.charAt(0).toUpperCase()}
+                {selectedPatient.fullName.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-900">{selectedPatient.name}</p>
-                <p className="text-xs text-slate-500">{selectedPatient.patientId} · {selectedPatient.age}y · {selectedPatient.gender}</p>
+                <p className="text-sm font-semibold text-slate-900">{selectedPatient.fullName}</p>
+                <p className="text-xs text-slate-500">{selectedPatient.email} · {selectedPatient.age}y · {selectedPatient.gender}</p>
               </div>
               <button type="button" onClick={clearPatient} className="ml-auto text-slate-400 hover:text-slate-600 shrink-0">
                 <X size={16} />
@@ -230,11 +230,11 @@ export default function UploadReport() {
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none"
                       >
                         <div className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs font-bold flex-none">
-                          {p.name?.charAt(0).toUpperCase()}
+                          {p.fullName?.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-900">{p.name}</p>
-                          <p className="text-xs text-slate-400">{p.patientId} · {p.age}y · {p.gender}</p>
+                          <p className="text-sm font-medium text-slate-900">{p.fullName}</p>
+                          <p className="text-xs text-slate-400">{p.email} · {p.age}y · {p.gender}</p>
                         </div>
                       </button>
                     ))

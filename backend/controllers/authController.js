@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
+import Report from "../models/report.js";
+import Patient from "../models/patient.js";
 import {
   sendVerificationOtpEmail,
   sendLoginOtpEmail,
@@ -635,6 +637,82 @@ export const deleteStaffMember = async (req, res) => {
     await User.deleteOne({ _id: staff._id });
 
     return res.status(200).json({ message: "Staff deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Get admin dashboard statistics
+export const getAdminDashboardStats = async (req, res) => {
+  try {
+    // Total staff count (Nurse + Staff roles)
+    const totalStaff = await User.countDocuments({ 
+      role: { $in: ["Nurse", "Staff"] } 
+    });
+
+    // New staff this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const newStaffThisMonth = await User.countDocuments({
+      role: { $in: ["Nurse", "Staff"] },
+      createdAt: { $gte: startOfMonth }
+    });
+
+    // Total active patients (users with role = Patient)
+    const totalPatients = await User.countDocuments({ role: "Patient" });
+
+    // Recent activity (last 10 events: staff created + reports uploaded)
+    const recentStaffCreate = await User.find({ 
+      role: { $in: ["Nurse", "Staff"] } 
+    })
+      .select("fullName createdAt role")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    const recentReports = await Report.find()
+      .populate("patientId", "name")
+      .populate("uploadedBy", "fullName role")
+      .select("reportName createdAt uploadedBy patientId")
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Build activity feed
+    const activityFeed = [];
+
+    // Add staff creations
+    recentStaffCreate.forEach(staff => {
+      activityFeed.push({
+        type: "staff_created",
+        text: `New ${staff.role} account created: ${staff.fullName}`,
+        timestamp: staff.createdAt,
+        role: staff.role
+      });
+    });
+
+    // Add recent reports
+    recentReports.forEach(report => {
+      activityFeed.push({
+        type: "report_uploaded",
+        text: `Report uploaded for Patient: ${report.reportName}`,
+        timestamp: report.createdAt,
+        role: "report"
+      });
+    });
+
+    // Sort by timestamp and take top 10
+    activityFeed.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+
+    return res.status(200).json({
+      message: "Dashboard stats retrieved successfully",
+      stats: {
+        totalStaff,
+        newStaffThisMonth,
+        totalPatients,
+        recentActivity: activityFeed
+      }
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

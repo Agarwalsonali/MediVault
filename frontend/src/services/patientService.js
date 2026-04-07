@@ -62,3 +62,34 @@ export const createPatient = async (patientData) => {
     throw error.response?.data || { message: 'Failed to create patient' };
   }
 };
+
+// Get all users with role = "Patient"
+export const getAllPatientUsers = async () => {
+  try {
+    const token = localStorage.getItem('mrms_jwt');
+    const response = await axios.get(`${API_URL}/users/all`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.patients || [];
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to fetch patient users' };
+  }
+};
+
+// Search users with role = "Patient" by ID or name
+export const searchPatientUsers = async (query) => {
+  try {
+    const token = localStorage.getItem('mrms_jwt');
+    const response = await axios.get(`${API_URL}/users/search`, {
+      params: { query },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.patients || [];
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to search patient users' };
+  }
+};

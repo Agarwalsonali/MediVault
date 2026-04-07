@@ -69,9 +69,19 @@ export const deleteStaffUser = async (id) => {
   }
 };
 
+export const getDashboardStats = async () => {
+  try {
+    const response = await adminApi.get('/admin/dashboard-stats');
+    return response.data.stats;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
 export default {
   createStaffUser,
   fetchStaffUsers,
   updateStaffUser,
   deleteStaffUser,
+  getDashboardStats,
 };

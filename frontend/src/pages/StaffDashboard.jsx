@@ -5,7 +5,7 @@ import {
   TrendingUp, Clock, CheckCircle, AlertCircle, Loader,
   ArrowRight, Activity
 } from 'lucide-react';
-import { getPatients } from '../services/patientService.js';
+import { getAllPatientUsers } from '../services/patientService.js';
 import { getAllReports } from '../services/reportService.js';
 import { getUser } from '../utils/getUser.js';
 
@@ -28,7 +28,7 @@ export default function StaffDashboard() {
       try {
         setLoading(true);
         const [patientData, reportData] = await Promise.all([
-          getPatients().catch(() => []),
+          getAllPatientUsers().catch(() => []),
           getAllReports().catch(() => [])
         ]);
         setPatients(patientData || []);
@@ -68,8 +68,8 @@ export default function StaffDashboard() {
   const patientsWithReports = new Set(reports.map(r => r.patientId?._id)).size;
 
   const filteredPatients = patients.filter(p =>
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.patientId?.toLowerCase().includes(search.toLowerCase())
+    p.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+    p._id?.toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8);
 
   if (loading) {
@@ -198,11 +198,11 @@ export default function StaffDashboard() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-sm font-bold flex-none">
-                    {patient.name?.charAt(0).toUpperCase()}
+                    {patient.fullName?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{patient.name}</p>
-                    <p className="text-xs text-slate-400">{patient.patientId} · {patient.age}y · {patient.gender}</p>
+                    <p className="text-sm font-semibold text-slate-900">{patient.fullName}</p>
+                    <p className="text-xs text-slate-400">{patient._id} · {patient.age}y · {patient.gender}</p>
                   </div>
                 </div>
                 <ArrowRight size={16} className="hidden sm:block text-slate-300 group-hover:text-sky-500 transition-colors" />
