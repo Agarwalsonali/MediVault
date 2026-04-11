@@ -1,5 +1,6 @@
 import Patient from "../models/patient.js";
 import User from "../models/user.js";
+import { sanitizeString, sanitizeNumber } from "../utils/sanitizer.js";
 
 const STAFF_OR_ADMIN_ROLES = ["Admin", "Doctor", "Nurse", "Staff"];
 
@@ -28,7 +29,11 @@ export const getAllPatients = async (req, res) => {
 
 export const searchPatients = async (req, res) => {
   try {
-    const { query } = req.query;
+    let { query } = req.query;
+    
+    // Sanitize input
+    if (query) query = sanitizeString(query);
+    
     const accessFilter = getPatientAccessFilter(req);
 
     if (!query || query.trim().length === 0) {
@@ -66,9 +71,14 @@ export const searchPatients = async (req, res) => {
 
 export const createPatient = async (req, res) => {
   try {
-    const { name, age, gender } = req.body;
+    let { name, age, gender } = req.body;
 
-    if (!name || !age || !gender) {
+    // Sanitize inputs
+    name = sanitizeString(name);
+    age = sanitizeNumber(age);
+    gender = sanitizeString(gender);
+
+    if (!name || age === null || !gender) {
       return res.status(400).json({
         message: "name, age, and gender are required",
       });
@@ -170,7 +180,10 @@ export const searchPatientUsers = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const { query } = req.query;
+    let { query } = req.query;
+    
+    // Sanitize input
+    if (query) query = sanitizeString(query);
 
     if (!query || query.trim().length === 0) {
       const patientUsers = await User.find({ role: "Patient" })

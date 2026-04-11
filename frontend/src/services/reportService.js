@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { sanitizeString, sanitizeFileName } from '../utils/sanitizer.js';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API_BASE_URL = RAW_API_URL || '/api';
@@ -21,8 +22,37 @@ export const getAllReports = async () => {
 
 export const uploadReport = async (formData) => {
   try {
+    // Create new FormData with sanitized inputs
+    const sanitizedFormData = new FormData();
+    
+    // Sanitize text fields
+    if (formData.has('patientId')) {
+      sanitizedFormData.append('patientId', formData.get('patientId'));
+    }
+    if (formData.has('reportName')) {
+      sanitizedFormData.append('reportName', sanitizeString(formData.get('reportName')));
+    }
+    if (formData.has('reportType')) {
+      sanitizedFormData.append('reportType', sanitizeString(formData.get('reportType')));
+    }
+    if (formData.has('reportDate')) {
+      sanitizedFormData.append('reportDate', formData.get('reportDate'));
+    }
+    if (formData.has('notes')) {
+      sanitizedFormData.append('notes', sanitizeString(formData.get('notes')));
+    }
+    if (formData.has('doctorName')) {
+      sanitizedFormData.append('doctorName', sanitizeString(formData.get('doctorName')));
+    }
+    
+    // File should be added as-is (already handled by file input)
+    if (formData.has('file')) {
+      const file = formData.get('file');
+      sanitizedFormData.append('file', file);
+    }
+    
     const token = localStorage.getItem('mrms_jwt');
-    const response = await axios.post(API_URL, formData, {
+    const response = await axios.post(API_URL, sanitizedFormData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',

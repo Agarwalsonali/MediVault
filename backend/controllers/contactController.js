@@ -1,6 +1,7 @@
 import Contact from "../models/contact.js";
 import { sendSupportRequestNotificationEmail } from "../utils/sendEmail.js";
 import { contactLogger } from "../utils/logger.js";
+import { sanitizeString, sanitizeEmail } from "../utils/sanitizer.js";
 
 const ALLOWED_ROLES = ["Patient", "Staff"];
 const ALLOWED_ISSUE_TYPES = ["Bug", "Feedback", "Report Issue", "Other"];
@@ -20,32 +21,33 @@ const resolveAdminRecipients = () => {
 
 export const createContactMessage = async (req, res) => {
   try {
-    const { name, email, role, issueType, message } = req.body;
+    let { name, email, role, issueType, message } = req.body;
 
-    const normalizedName = name?.trim();
-    const normalizedEmail = email?.trim().toLowerCase();
-    const normalizedRole = role?.trim();
-    const normalizedIssueType = issueType?.trim();
-    const normalizedMessage = message?.trim();
+    // Sanitize all inputs
+    name = sanitizeString(name);
+    email = sanitizeEmail(email);
+    role = sanitizeString(role);
+    issueType = sanitizeString(issueType);
+    message = sanitizeString(message);
 
-    if (!normalizedName || !normalizedEmail || !normalizedRole || !normalizedIssueType || !normalizedMessage) {
+    if (!name || !email || !role || !issueType || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (!ALLOWED_ROLES.includes(normalizedRole)) {
+    if (!ALLOWED_ROLES.includes(role)) {
       return res.status(400).json({ message: "Invalid role. Use Patient or Staff." });
     }
 
-    if (!ALLOWED_ISSUE_TYPES.includes(normalizedIssueType)) {
+    if (!ALLOWED_ISSUE_TYPES.includes(issueType)) {
       return res.status(400).json({ message: "Invalid issue type." });
     }
 
     await Contact.create({
-      name: normalizedName,
-      email: normalizedEmail,
-      role: normalizedRole,
-      issueType: normalizedIssueType,
-      message: normalizedMessage,
+      name,
+      email,
+      role,
+      issueType,
+      message,
     });
 
     const recipients = resolveAdminRecipients();
@@ -58,11 +60,11 @@ export const createContactMessage = async (req, res) => {
     try {
       await sendSupportRequestNotificationEmail({
         to: recipients.join(","),
-        name: normalizedName,
-        email: normalizedEmail,
-        role: normalizedRole,
-        issueType: normalizedIssueType,
-        message: normalizedMessage,
+        name,
+        email,
+        role,
+        issueType,
+        message,
         submittedAt: new Date().toLocaleString(),
       });
     } catch (emailError) {

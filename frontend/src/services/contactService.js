@@ -1,4 +1,5 @@
 import axios from "axios";
+import { sanitizeString, sanitizeEmail } from "../utils/sanitizer.js";
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
 const API_BASE_URL = RAW_API_URL
@@ -20,12 +21,19 @@ const extractErrorMessage = (error) => {
 
 export const submitContactMessage = async ({ name, email, role, issueType, message }) => {
   try {
+    // Sanitize all inputs
+    const sanitizedName = sanitizeString(name);
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedRole = sanitizeString(role);
+    const sanitizedIssueType = sanitizeString(issueType);
+    const sanitizedMessage = sanitizeString(message);
+    
     const res = await api.post("/", {
-      name,
-      email,
-      role,
-      issueType,
-      message,
+      name: sanitizedName,
+      email: sanitizedEmail,
+      role: sanitizedRole,
+      issueType: sanitizedIssueType,
+      message: sanitizedMessage,
     });
 
     return res.data;

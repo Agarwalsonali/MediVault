@@ -314,7 +314,7 @@ export default function UploadReport() {
             onChange={e => setNotes(e.target.value)}
             rows={2}
             placeholder="Any observations or additional context…"
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+            className="mv-textarea"
           />
         </div>
 

@@ -2,6 +2,7 @@ import Report from "../models/report.js";
 import Patient from "../models/patient.js";
 import cloudinary from "../utils/cloudinary.js";
 import { reportLogger } from "../utils/logger.js";
+import { sanitizeString } from "../utils/sanitizer.js";
 
 // Report type categories for real-world medical context
 const VALID_REPORT_TYPES = [
@@ -38,7 +39,13 @@ const mapUploaderRole = (role) => {
 
 export const uploadReport = async (req, res) => {
   try {
-    const { patientId, reportName, reportType, reportDate, notes, doctorName } = req.body;
+    let { patientId, reportName, reportType, reportDate, notes, doctorName } = req.body;
+
+    // Sanitize string inputs
+    reportName = sanitizeString(reportName);
+    reportType = sanitizeString(reportType);
+    notes = sanitizeString(notes);
+    doctorName = sanitizeString(doctorName);
 
     if (!patientId || !reportName || !reportType || !reportDate) {
       return res.status(400).json({
@@ -79,16 +86,16 @@ export const uploadReport = async (req, res) => {
       uploadedByRole: uploaderRole,
       uploaded_by: uploaderRole,
       verified: req.user?.role === "Admin" || req.user?.role === "Doctor" || req.user?.role === "Nurse" || req.user?.role === "Staff",
-      reportName:  reportName.trim(),
+      reportName: reportName.trim(),
       reportType,
-      reportDate:  new Date(reportDate),
-      doctorName:  doctorName ? doctorName.trim() : "",
-      notes:       notes ? notes.trim() : "",
+      reportDate: new Date(reportDate),
+      doctorName: doctorName ? doctorName.trim() : "",
+      notes: notes ? notes.trim() : "",
       fileUrl,        // ← Cloudinary HTTPS link stored in MongoDB
       publicId,       // ← for deletion from Cloudinary
-      fileName:    req.file.originalname,
-      fileSize:    req.file.size,
-      mimeType:    req.file.mimetype,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
     });
 
     const populatedReport = await Report.findById(report._id)

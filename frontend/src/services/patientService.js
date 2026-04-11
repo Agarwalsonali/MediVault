@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { sanitizeString, sanitizeNumber } from '../utils/sanitizer.js';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API_BASE_URL = RAW_API_URL || '/api';
@@ -21,9 +22,12 @@ export const getPatients = async () => {
 
 export const searchPatients = async (query) => {
   try {
+    // Sanitize query
+    const sanitizedQuery = sanitizeString(query);
+    
     const token = localStorage.getItem('mrms_jwt');
     const response = await axios.get(`${API_URL}/search`, {
-      params: { query },
+      params: { query: sanitizedQuery },
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -50,8 +54,15 @@ export const getPatientById = async (patientId) => {
 
 export const createPatient = async (patientData) => {
   try {
+    // Sanitize patient data
+    const sanitizedData = {
+      name: sanitizeString(patientData.name),
+      age: sanitizeNumber(patientData.age),
+      gender: sanitizeString(patientData.gender),
+    };
+    
     const token = localStorage.getItem('mrms_jwt');
-    const response = await axios.post(API_URL, patientData, {
+    const response = await axios.post(API_URL, sanitizedData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -81,9 +92,12 @@ export const getAllPatientUsers = async () => {
 // Search users with role = "Patient" by ID or name
 export const searchPatientUsers = async (query) => {
   try {
+    // Sanitize query
+    const sanitizedQuery = sanitizeString(query);
+    
     const token = localStorage.getItem('mrms_jwt');
     const response = await axios.get(`${API_URL}/users/search`, {
-      params: { query },
+      params: { query: sanitizedQuery },
       headers: {
         Authorization: `Bearer ${token}`,
       },

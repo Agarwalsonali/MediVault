@@ -161,11 +161,11 @@ export default function StaffDashboard() {
             onClick={() => navigate('/staff-dashboard/upload')}
           />
           <QuickAction
-            icon={<Search size={20} className="text-sky-600" />}
+            icon={<Search size={20} className="text-teal-600" />}
             title="Search Patients"
             description="Find a patient by name or ID and view their records"
-            bg="bg-sky-50"
-            border="border-sky-100"
+            bg="bg-teal-50"
+            border="border-teal-100"
             onClick={() => document.getElementById('patient-list')?.scrollIntoView({ behavior: 'smooth' })}
           />
         </div>

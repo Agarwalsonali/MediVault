@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { sanitizeString, sanitizeEmail } from '../utils/sanitizer.js';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API_BASE_URL = RAW_API_URL
@@ -138,9 +139,17 @@ const extractErrorMessage = (error) => {
 // 1. Signup → /register
 export const registerUser = async ({ fullName, email, password }) => {
   try {
-    const res = await api.post('/register', { fullName, email, password });
+    // Sanitize inputs
+    const sanitizedFullName = sanitizeString(fullName);
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    const res = await api.post('/register', { 
+      fullName: sanitizedFullName, 
+      email: sanitizedEmail, 
+      password 
+    });
     // store email for verification step
-    setVerifyEmail(email);
+    setVerifyEmail(sanitizedEmail);
     return res.data; // { message }
   } catch (error) {
     throw new Error(extractErrorMessage(error));
@@ -150,7 +159,14 @@ export const registerUser = async ({ fullName, email, password }) => {
 // 1b. Verify Email → /verify-email
 export const verifyEmail = async ({ email, otp }) => {
   try {
-    const res = await api.post('/verify-email', { email, otp });
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedOtp = sanitizeString(otp);
+    
+    const res = await api.post('/verify-email', { 
+      email: sanitizedEmail, 
+      otp: sanitizedOtp 
+    });
     // clear verification email after success
     setVerifyEmail(null);
     return res.data; // { message }
@@ -161,41 +177,44 @@ export const verifyEmail = async ({ email, otp }) => {
 
 export const resendVerificationOtp = async ({ email }) => {
   try {
-    const res = await api.post('/resend-verification-otp', { email });
+    // Sanitize input
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    const res = await api.post('/resend-verification-otp', { 
+      email: sanitizedEmail 
+    });
     return res.data; // { message }
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
 };
 
-// 2. Login → /login (may return JWT immediately if 2FA is disabled)
+// 2. Login → /login (returns JWT immediately, no OTP required)
 export const loginUser = async ({ email, password }) => {
   try {
-    const normalizedEmail = email.trim().toLowerCase();
-    const res = await api.post('/login', { email: normalizedEmail, password });
+    // Sanitize email input
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    const res = await api.post('/login', { 
+      email: sanitizedEmail, 
+      password 
+    });
     const data = res.data;
-    // Keep user identity available for dashboard/profile display.
-    setLoginEmail(normalizedEmail);
+    
+    // Decode JWT and store identity
+    const identity = syncIdentityFromToken(data.token, {
+      role: data.role,
+      fullName: data.fullName,
+    });
 
-    if (data?.token) {
-      // 2FA disabled: decode JWT and store identity
-      const identity = syncIdentityFromToken(data.token, {
-        role: data.role,
-        fullName: data.fullName,
-      });
-
-      return {
-        ...data,
-        role: identity.role,
-        name: identity.name,
-      };
-    } else if (data?.twoFactorRequired) {
-      // 2FA enabled: store email for OTP verification step
-      setLoginEmail(normalizedEmail);
-      setRole(data.role);
-      setFullName(data.fullName);
-    }
-    return data;
+    // Store login email for user experience
+    setLoginEmail(sanitizedEmail);
+    
+    return {
+      ...data,
+      role: identity.role,
+      name: identity.name,
+    };
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
@@ -204,9 +223,15 @@ export const loginUser = async ({ email, password }) => {
 // 3. Verify OTP → /verify-otp
 export const verifyOtp = async ({ email, otp }) => {
   try {
-    const res = await api.post('/verify-otp', { email, otp });
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedOtp = sanitizeString(otp);
+    
+    const res = await api.post('/verify-otp', { 
+      email: sanitizedEmail, 
+      otp: sanitizedOtp 
+    });
     const { token, role, fullName } = res.data;
-    const normalizedEmail = email.trim().toLowerCase();
     let identity = { role: role || ROLE_PATIENT, name: fullName || '' };
 
     if (token) {
@@ -214,7 +239,7 @@ export const verifyOtp = async ({ email, otp }) => {
     }
 
     // keep identity for the logged-in user experience
-    setLoginEmail(normalizedEmail);
+    setLoginEmail(sanitizedEmail);
     return {
       ...res.data,
       role: identity.role,
@@ -228,9 +253,14 @@ export const verifyOtp = async ({ email, otp }) => {
 // 4. Forgot Password → /forgot-password
 export const requestPasswordReset = async ({ email }) => {
   try {
-    const res = await api.post('/forgot-password', { email });
+    // Sanitize input
+    const sanitizedEmail = sanitizeEmail(email);
+    
+    const res = await api.post('/forgot-password', { 
+      email: sanitizedEmail 
+    });
     // store email for reset step
-    setResetEmail(email);
+    setResetEmail(sanitizedEmail);
     return res.data; // { message }
   } catch (error) {
     throw new Error(extractErrorMessage(error));
@@ -240,7 +270,15 @@ export const requestPasswordReset = async ({ email }) => {
 // 5. Reset Password → /reset-password
 export const resetPassword = async ({ email, otp, newPassword }) => {
   try {
-    const res = await api.post('/reset-password', { email, otp, newPassword });
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedOtp = sanitizeString(otp);
+    
+    const res = await api.post('/reset-password', { 
+      email: sanitizedEmail, 
+      otp: sanitizedOtp, 
+      newPassword 
+    });
     // clear reset email after successful reset
     setResetEmail(null);
     return res.data; // { message }

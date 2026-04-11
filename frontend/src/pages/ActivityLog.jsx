@@ -93,8 +93,8 @@ export default function ActivityLog() {
 
   return (
     <div className="dash-page">
-      {/* Header with back button */}
-      <div className="flex items-center gap-3 mb-6">
+      {/* Header with back button - hidden on mobile */}
+      <div className="activity-log-header flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/admin-dashboard')}
           className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors"

@@ -8,27 +8,31 @@ import Report from "../models/report.js";
 import Patient from "../models/patient.js";
 import {
   sendVerificationOtpEmail,
-  sendLoginOtpEmail,
   sendPasswordResetOtpEmail,
   sendInviteEmail,
 } from "../utils/sendEmail.js";
 import { generate6DigitOtp } from "../utils/otp.js";
 import { validatePassword } from "../utils/passwordValidator.js";
 import { authLogger } from "../utils/logger.js";
+import { sanitizeString, sanitizeEmail } from "../utils/sanitizer.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
 const AVATARS_DIR = path.join(process.cwd(), "uploads", "avatars");
 
 export const registerUser = async (req, res) => {
   try {
-    const { fullName, email, password, role } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { fullName, email, password, role } = req.body;
+    
+    // Sanitize inputs
+    fullName = sanitizeString(fullName);
+    email = sanitizeEmail(email);
+    role = sanitizeString(role || "Patient");
 
     if (role === "Admin") {
       return res.status(403).json({ message: "Admin role cannot be assigned via signup" });
     }
 
-    const userExists = await User.findOne({ email: normalizedEmail });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -49,7 +53,7 @@ export const registerUser = async (req, res) => {
 
     await User.create({
       fullName,
-      email: normalizedEmail,
+      email,
       password: hashedPassword,
       role: "Patient",
       isVerified: false,
@@ -58,11 +62,11 @@ export const registerUser = async (req, res) => {
       emailOtpExpires
     });
 
-    await sendVerificationOtpEmail(normalizedEmail, emailOtp);
+    await sendVerificationOtpEmail(email, emailOtp);
 
     res.status(201).json({
       message: "Registered successfully. Please verify your email.",
-      email: normalizedEmail
+      email
     });
 
   } catch (error) {
@@ -73,10 +77,12 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email, password } = req.body;
+    
+    // Sanitize inputs
+    email = sanitizeEmail(email);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     if (STAFF_ROLES.includes(user.role) && !user.isInviteAccepted) {
@@ -94,21 +100,18 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({ message: "Please verify your email first" });
     }
 
-    // Enforce OTP-based 2FA after password for every user.
-    user.is2FAEnabled = true;
-
-    const loginOtp = generate6DigitOtp();
-    user.loginOtp = loginOtp;
-    user.loginOtpExpires = Date.now() + 5 * 60 * 1000; // 5 mins
-    await user.save();
-
-    await sendLoginOtpEmail(normalizedEmail, loginOtp);
+    // Issue JWT token directly - no OTP required for login
+    const token = jwt.sign(
+      { id: user._id, role: user.role, fullName: user.fullName },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     return res.json({
-      message: "Login OTP sent to your email",
-      twoFactorRequired: true,
-      fullName: user.fullName,
-      role: user.role
+      message: "Login successful",
+      token,
+      role: user.role,
+      fullName: user.fullName
     });
 
   } catch (error) {
@@ -119,10 +122,13 @@ export const loginUser = async (req, res) => {
 
 export const verifyOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email, otp } = req.body;
+    
+    // Sanitize inputs
+    email = sanitizeEmail(email);
+    otp = sanitizeString(otp);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     const storedLoginOtp = user?.loginOtp ?? user?.otp;
     const storedLoginOtpExpires = user?.loginOtpExpires ?? user?.otpExpires;
     if (
@@ -165,10 +171,12 @@ export const verifyOTP = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email } = req.body;
+    
+    // Sanitize input
+    email = sanitizeEmail(email);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     const passwordResetOtp = generate6DigitOtp();
@@ -177,7 +185,7 @@ export const forgotPassword = async (req, res) => {
     user.passwordResetOtpExpires = Date.now() + 5 * 60 * 1000;
     await user.save();
 
-    await sendPasswordResetOtpEmail(normalizedEmail, passwordResetOtp);
+    await sendPasswordResetOtpEmail(email, passwordResetOtp);
 
     return res.json({ message: "Reset OTP sent to email" });
 
@@ -189,10 +197,13 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email, otp, newPassword } = req.body;
+    
+    // Sanitize inputs
+    email = sanitizeEmail(email);
+    otp = sanitizeString(otp);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     const storedPasswordResetOtp = user?.passwordResetOtp ?? user?.otp;
     const storedPasswordResetOtpExpires = user?.passwordResetOtpExpires ?? user?.otpExpires;
     if (
@@ -235,10 +246,13 @@ export const resetPassword = async (req, res) => {
 
 export const verifyEmail = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email, otp } = req.body;
+    
+    // Sanitize inputs
+    email = sanitizeEmail(email);
+    otp = sanitizeString(otp);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     if (user.isVerified) {
@@ -273,10 +287,12 @@ export const verifyEmail = async (req, res) => {
 
 export const resendVerificationOtp = async (req, res) => {
   try {
-    const { email } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
+    let { email } = req.body;
+    
+    // Sanitize input
+    email = sanitizeEmail(email);
 
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
     if (user.isVerified) {
@@ -290,7 +306,7 @@ export const resendVerificationOtp = async (req, res) => {
     user.emailOtpExpires = emailOtpExpires;
     await user.save();
 
-    await sendVerificationOtpEmail(normalizedEmail, emailOtp);
+    await sendVerificationOtpEmail(email, emailOtp);
 
     return res.status(200).json({ message: "Verification OTP resent to your email" });
   } catch (error) {
@@ -308,7 +324,12 @@ export const logoutUser = async (req, res) => {
 
 export const createStaffAccount = async (req, res) => {
   try {
-    const { fullName, email, role } = req.body;
+    let { fullName, email, role } = req.body;
+
+    // Sanitize inputs
+    fullName = sanitizeString(fullName);
+    email = sanitizeEmail(email);
+    role = sanitizeString(role);
 
     if (!fullName || !email || !role) {
       return res.status(400).json({ message: "fullName, email and role are required" });
@@ -318,8 +339,7 @@ export const createStaffAccount = async (req, res) => {
       return res.status(400).json({ message: "Staff role must be Staff or Nurse" });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const userExists = await User.findOne({ email: normalizedEmail });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -334,12 +354,12 @@ export const createStaffAccount = async (req, res) => {
 
     const inviteLink = `${frontendBaseUrl.replace(/\/+$/, "")}/set-password?token=${inviteToken}`;
     if (String(process.env.LOG_INVITE_LINK || "false").toLowerCase() === "true") {
-      authLogger.info("Staff invite link generated", { email: normalizedEmail, inviteLink });
+      authLogger.info("Staff invite link generated", { email, inviteLink });
     }
 
     const staffUser = await User.create({
       fullName,
-      email: normalizedEmail,
+      email,
       role,
       isVerified: true,
       isInviteAccepted: false,
@@ -350,7 +370,7 @@ export const createStaffAccount = async (req, res) => {
       emailOtpExpires: null
     });
 
-    await sendInviteEmail(normalizedEmail, inviteLink);
+    await sendInviteEmail(email, inviteLink);
 
     return res.status(201).json({
       message: `${role} account created and invite email sent successfully`,
@@ -368,7 +388,10 @@ export const createStaffAccount = async (req, res) => {
 
 export const setPasswordFromInvite = async (req, res) => {
   try {
-    const { token, password } = req.body;
+    let { token, password } = req.body;
+
+    // Sanitize token
+    token = sanitizeString(token);
 
     if (!token || !password) {
       return res.status(400).json({ message: "token and password are required" });
@@ -433,7 +456,11 @@ export const getMyProfile = async (req, res) => {
 
 export const updateMyProfile = async (req, res) => {
   try {
-    const { fullName, email, password } = req.body;
+    let { fullName, email, password } = req.body;
+
+    // Sanitize inputs
+    if (fullName) fullName = sanitizeString(fullName);
+    if (email) email = sanitizeEmail(email);
 
     if (!email || !email.trim()) {
       return res.status(400).json({ message: "Email is required" });
@@ -444,15 +471,13 @@ export const updateMyProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const emailOwner = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+    const emailOwner = await User.findOne({ email, _id: { $ne: user._id } });
     if (emailOwner) {
       return res.status(400).json({ message: "Email is already in use" });
     }
 
-    user.fullName = fullName?.trim() || user.fullName;
-    user.email = normalizedEmail;
+    user.fullName = fullName || user.fullName;
+    user.email = email;
 
     if (password && password.trim()) {
       // Validate password strength

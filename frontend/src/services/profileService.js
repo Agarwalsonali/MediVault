@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { sanitizeString, sanitizeNumber } from '../utils/sanitizer.js';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API_BASE_URL = RAW_API_URL || '/api';
@@ -30,8 +31,24 @@ export const getProfile = async () => {
  */
 export const updateProfile = async (profileData) => {
   try {
+    // Sanitize inputs
+    const sanitizedData = {};
+    
+    if (profileData.age !== undefined) {
+      sanitizedData.age = sanitizeNumber(profileData.age);
+    }
+    if (profileData.gender !== undefined) {
+      sanitizedData.gender = sanitizeString(profileData.gender);
+    }
+    if (profileData.bloodGroup !== undefined) {
+      sanitizedData.bloodGroup = sanitizeString(profileData.bloodGroup);
+    }
+    if (profileData.allergies !== undefined) {
+      sanitizedData.allergies = sanitizeString(profileData.allergies);
+    }
+    
     const token = getToken();
-    const response = await axios.put(PROFILE_API_URL, profileData, {
+    const response = await axios.put(PROFILE_API_URL, sanitizedData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',

@@ -24,15 +24,8 @@ export default function Login() {
     try {
       const result = await loginUser({ email: form.email, password: form.password });
 
-      if (result?.twoFactorRequired) {
-        // OTP step required — navigate with stored email
-        toast.success('Login code sent to your email.');
-        navigate('/verify-otp', { state: { email: form.email.trim().toLowerCase() } });
-      } else {
-        // Direct login (no 2FA) — go to dashboard
-        toast.success('Signed in successfully.');
-        navigate(getDashboardPathByRole(result?.role));
-      }
+      toast.success('Signed in successfully.');
+      navigate(getDashboardPathByRole(result?.role));
     } catch (err) {
       toast.error(err?.message || 'Invalid email or password. Please try again.');
     } finally {
@@ -65,7 +58,7 @@ export default function Login() {
         </div>
 
         <div className="auth-hero-features">
-          {['End-to-end encrypted records', 'Role-based access control', 'Instant OTP verification', 'Multi-device, always in sync'].map(f => (
+          {['End-to-end encrypted records', 'Role-based access control', 'Email verification', 'Multi-device, always in sync'].map(f => (
             <div key={f} className="auth-hero-feature">
               <div className="auth-hero-feature-dot" />
               <span>{f}</span>

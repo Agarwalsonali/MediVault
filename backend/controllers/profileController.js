@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import cloudinary from "../utils/cloudinary.js";
 import { profileLogger } from "../utils/logger.js";
+import { sanitizeString, sanitizeNumber } from "../utils/sanitizer.js";
 
 /**
  * Get logged-in patient's profile
@@ -50,12 +51,17 @@ export const getPatientProfile = async (req, res) => {
 export const updatePatientProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { age, gender, bloodGroup, allergies } = req.body;
+    let { age, gender, bloodGroup, allergies } = req.body;
+
+    // Sanitize inputs
+    if (age !== undefined) age = sanitizeNumber(age);
+    if (gender !== undefined) gender = sanitizeString(gender);
+    if (bloodGroup !== undefined) bloodGroup = sanitizeString(bloodGroup);
+    if (allergies !== undefined) allergies = sanitizeString(allergies);
 
     // Validate age if provided
     if (age !== undefined && age !== null) {
-      const ageNum = parseInt(age, 10);
-      if (isNaN(ageNum) || ageNum < 0 || ageNum > 150) {
+      if (Number.isNaN(age) || age < 0 || age > 150) {
         return res.status(400).json({
           message: "Age must be a number between 0 and 150"
         });
