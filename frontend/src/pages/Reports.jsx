@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FileText, Search, Download, Eye, Filter, Trash2 } from 'lucide-react';
+import { FileText, Search, Download, Eye, Filter, Trash2, Share2 } from 'lucide-react';
 import { viewReport, downloadReport } from '../services/profileService.js';
 import { getMyPatientReports, deleteMyPatientReport } from '../services/patientReportService.js';
+import { generateShareLink, copyToClipboard } from '../services/sharedReportService.js';
 
 const TYPE_COLORS = {
   'Blood Test': 'mv-badge-teal',
@@ -52,6 +53,7 @@ export default function Reports() {
   const [downloading, setDownloading] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [sharing, setSharing] = useState(null);
 
   // Fetch reports on mount
   useEffect(() => {
@@ -125,6 +127,25 @@ export default function Reports() {
       toast.error(error.message || 'Failed to delete report');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleShare = async (reportId) => {
+    try {
+      setSharing(reportId);
+      const data = await generateShareLink(reportId);
+      const copied = await copyToClipboard(data.shareLink);
+      
+      if (copied) {
+        toast.success('Share link copied to clipboard!');
+      } else {
+        toast.info('Share link: ' + data.shareLink);
+      }
+    } catch (error) {
+      console.error('Failed to generate share link:', error);
+      toast.error(error.message || 'Failed to generate share link');
+    } finally {
+      setSharing(null);
     }
   };
 
@@ -266,6 +287,15 @@ export default function Reports() {
                           style={{ padding: '0 10px' }}
                         >
                           <Download size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleShare(r._id)}
+                          disabled={sharing === r._id}
+                          className="mv-btn mv-btn-ghost mv-btn-sm"
+                          title="Share with Doctor"
+                          style={{ padding: '0 10px' }}
+                        >
+                          <Share2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(r._id)}

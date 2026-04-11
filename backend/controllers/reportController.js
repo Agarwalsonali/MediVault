@@ -3,6 +3,7 @@ import Patient from "../models/patient.js";
 import cloudinary from "../utils/cloudinary.js";
 import { reportLogger } from "../utils/logger.js";
 import { sanitizeString } from "../utils/sanitizer.js";
+import jwt from "jsonwebtoken";
 
 // Report type categories for real-world medical context
 const VALID_REPORT_TYPES = [
@@ -229,6 +230,101 @@ export const downloadReport = async (req, res) => {
       }
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Share report with doctor - generates secure 30-minute link
+export const shareReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id).populate("patientId");
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Security: Only the report uploader can share it
+    if (report.uploadedBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: Only uploader can share" });
+    }
+
+    // Generate share token (30 minutes expiry)
+    const shareToken = jwt.sign(
+      {
+        reportId: report._id.toString(),
+        role: "doctor-access",
+        type: "report-share"
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30m" }
+    );
+
+    // Build share link
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+    const shareLink = `${frontendUrl}/shared-report/${shareToken}`;
+
+    reportLogger.info(`Report ${report._id} shared by ${req.user.id}`);
+
+    res.status(200).json({
+      message: "Report share link generated",
+      shareLink,
+      expiresIn: "30 minutes"
+    });
+  } catch (error) {
+    reportLogger.error(`Share report error: ${error.message}`);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Access shared report - verifies token and returns report data
+export const getSharedReport = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ 
+        message: err.name === "TokenExpiredError" ? "Link expired" : "Invalid link" 
+      });
+    }
+
+    // Check token type
+    if (decoded.type !== "report-share" || decoded.role !== "doctor-access") {
+      return res.status(401).json({ message: "Invalid link" });
+    }
+
+    // Fetch report
+    const report = await Report.findById(decoded.reportId)
+      .select("_id reportName reportType reportDate fileName fileUrl fileSize mimeType doctorName uploadedBy patientId")
+      .populate("patientId", "name age gender")
+      .populate("uploadedBy", "fullName email");
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    reportLogger.info(`Shared report ${report._id} accessed`);
+
+    res.status(200).json({
+      message: "Report accessed successfully",
+      report: {
+        _id: report._id,
+        reportName: report.reportName,
+        reportType: report.reportType,
+        reportDate: report.reportDate,
+        fileName: report.fileName,
+        fileUrl: report.fileUrl,
+        fileSize: report.fileSize,
+        mimeType: report.mimeType,
+        doctorName: report.doctorName,
+        uploadedBy: report.uploadedBy,
+        patientId: report.patientId
+      }
+    });
+  } catch (error) {
+    reportLogger.error(`Get shared report error: ${error.message}`);
     res.status(500).json({ message: error.message });
   }
 };

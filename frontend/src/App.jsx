@@ -23,6 +23,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import ManageStaff from './pages/ManageStaff.jsx';
 import AdminProfile from './pages/AdminProfile.jsx';
 import ActivityLog from './pages/ActivityLog.jsx';
+import SharedReport from './pages/SharedReport.jsx';
 import { getUser } from './utils/getUser.js';
 import { useSessionTimeout } from './hooks/useSessionTimeout.js';
 
@@ -181,6 +182,12 @@ function App() {
           >
             <Route index element={<ActivityLog />} />
           </Route>
+
+          {/* Shared report - public route, no auth required */}
+          <Route
+            path="/shared-report/:token"
+            element={<SharedReport />}
+          />
 
           <Route
             path="/login"

@@ -9,6 +9,8 @@ import {
   getAllReports,
   deleteReport,
   downloadReport,
+  shareReport,
+  getSharedReport,
 } from "../controllers/reportController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -67,11 +69,15 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB for X-rays / DICOM
 });
 
+// Public route - get shared report by token (no auth required)
+router.get("/shared/:token", getSharedReport);
+
 router.use(protect);
 
 router.post("/", upload.single("file"), uploadReport);
 router.get("/", getAllReports);
 router.get("/download/:id", downloadReport);
+router.post("/:id/share", shareReport);
 router.get("/patient/:patientId", getReportsByPatient);
 router.get("/:id", getReportById);
 router.delete("/:id", deleteReport);
