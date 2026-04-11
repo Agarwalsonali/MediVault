@@ -408,6 +408,14 @@
   color: var(--mv-slate-dark) !important;
 }
 
+[data-theme="dark"] .dash-page-title {
+  color: var(--mv-slate-900) !important;
+}
+
+[data-theme="dark"] .dash-page-subtitle {
+  color: var(--mv-slate) !important;
+}
+
 /* Patient upload page specific fixes */
 [data-theme="dark"] .patient-upload-body p {
   color: var(--mv-slate) !important;
@@ -668,6 +676,43 @@
 
 [data-theme="dark"] .border-slate-200 {
   border-color: #4a5568 !important;
+}
+
+/* Stat card styling in dark mode */
+[data-theme="dark"] .bg-sky-50,
+[data-theme="dark"] .bg-emerald-50,
+[data-theme="dark"] .bg-violet-50,
+[data-theme="dark"] .bg-amber-50 {
+  background-color: rgba(30, 58, 95, 0.4) !important;
+}
+
+[data-theme="dark"] .text-sky-600,
+[data-theme="dark"] .text-emerald-600,
+[data-theme="dark"] .text-violet-600,
+[data-theme="dark"] .text-amber-600 {
+  color: currentColor !important;
+}
+
+[data-theme="dark"] .rounded-2xl.border.border-slate-100 {
+  border-color: #4a5568 !important;
+}
+
+/* Stat card content visibility in dark mode */
+[data-theme="dark"] .rounded-2xl.border.border-slate-100 p {
+  color: var(--mv-slate-dark) !important;
+}
+
+[data-theme="dark"] .rounded-2xl.border.border-slate-100 .text-2xl.font-bold {
+  color: #f0fdfa !important;
+}
+
+/* Report summary badges - fix value visibility in dark mode */
+[data-theme="dark"] span[style*="color: var(--mv-navy)"] {
+  color: #f0fdfa !important;
+}
+
+[data-theme="dark"] div[style*="var(--mv-white)"] span:last-child {
+  color: #f0fdfa !important;
 }
 
 /* Hover states */

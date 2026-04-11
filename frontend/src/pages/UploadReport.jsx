@@ -163,7 +163,7 @@ export default function UploadReport() {
       <div className="w-full max-w-2xl mx-auto rounded-2xl sm:rounded-3xl border border-slate-100 bg-white p-4 sm:p-6 lg:p-8 shadow-sm">
 
       {/* Desktop intro */}
-      <div className="hidden lg:flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
+      <div className="hidden md:flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-7">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Upload Medical Report</h1>
           <p className="mt-1 text-sm text-slate-500">Supports all formats — lab, X-ray, prescription, DICOM & more.</p>

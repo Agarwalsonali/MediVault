@@ -110,7 +110,7 @@ export default function PatientUploadReport() {
   return (
     <div className="dash-page">
       <div className="mv-card" style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div className="mv-card-header patient-upload-intro">
+        <div className="mv-card-header patient-upload-intro hidden md:flex !hidden md:!flex">
           <div>
             <p className="mv-card-title">Upload Your Report</p>
             <p style={{ fontSize: "0.82rem", color: "var(--mv-slate)", marginTop: 2 }}>
