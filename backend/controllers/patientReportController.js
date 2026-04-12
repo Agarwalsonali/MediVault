@@ -69,7 +69,7 @@ export const uploadPatientReport = async (req, res) => {
       return res.status(403).json({ message: "Only patients can upload with this endpoint" });
     }
 
-    const { reportName, reportType, reportDate, notes } = req.body;
+    const { reportName, reportType, reportDate, notes, doctorName } = req.body;
 
     if (!reportName || !reportName.trim()) {
       if (req.file?.filename) {
@@ -123,7 +123,7 @@ export const uploadPatientReport = async (req, res) => {
       reportType: normalizedType,
       reportDate: parsedDate,
       notes: notes ? notes.trim() : "",
-      doctorName: "",
+      doctorName: doctorName ? doctorName.trim() : "",
       fileUrl: req.file.path,
       publicId: req.file.filename,
       fileName: req.file.originalname,

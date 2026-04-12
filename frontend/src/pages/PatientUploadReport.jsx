@@ -49,6 +49,7 @@ export default function PatientUploadReport() {
     reportName: "",
     reportType: "",
     reportDate: "",
+    doctorName: "",
     notes: "",
   });
   const [file, setFile] = useState(null);
@@ -90,12 +91,13 @@ export default function PatientUploadReport() {
         reportName: form.reportName,
         reportType: form.reportType,
         reportDate: form.reportDate,
+        doctorName: form.doctorName,
         notes: form.notes,
         file,
       });
 
       toast.success("Report uploaded successfully. It is marked as Self Uploaded.");
-      setForm({ reportName: "", reportType: "", reportDate: "", notes: "" });
+      setForm({ reportName: "", reportType: "", reportDate: "", doctorName: "", notes: "" });
       setFile(null);
       setErrors({});
       const input = document.getElementById("patient-report-file");
@@ -158,6 +160,17 @@ export default function PatientUploadReport() {
                   max={new Date().toISOString().split("T")[0]}
                   value={form.reportDate}
                   onChange={(e) => setForm((p) => ({ ...p, reportDate: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="mv-label" style={{ marginBottom: 6, display: "block" }}>Doctor / Lab Name (Optional)</label>
+                <input
+                  type="text"
+                  className="mv-input"
+                  value={form.doctorName}
+                  onChange={(e) => setForm((p) => ({ ...p, doctorName: e.target.value }))}
+                  placeholder="e.g., Dr. Smith or Lab-ABC"
                 />
               </div>
             </div>

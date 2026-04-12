@@ -10,11 +10,12 @@ const authHeaders = (contentType = "application/json") => ({
   "Content-Type": contentType,
 });
 
-export const uploadPatientReport = async ({ reportName, reportType, reportDate, notes, file }) => {
+export const uploadPatientReport = async ({ reportName, reportType, reportDate, doctorName, notes, file }) => {
   const formData = new FormData();
   formData.append("reportName", reportName?.trim() || "");
   if (reportType) formData.append("reportType", reportType);
   if (reportDate) formData.append("reportDate", reportDate);
+  if (doctorName) formData.append("doctorName", doctorName?.trim());
   if (notes) formData.append("notes", notes?.trim());
   formData.append("file", file);
 

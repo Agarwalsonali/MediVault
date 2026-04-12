@@ -5,7 +5,6 @@ import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import Report from "../models/report.js";
-import Patient from "../models/patient.js";
 import {
   sendVerificationOtpEmail,
   sendPasswordResetOtpEmail,

@@ -59,13 +59,21 @@ export const uploadReport = async (req, res) => {
     }
 
     // Verify patient exists and user has access
-    let patientFilter = { _id: patientId };
-    if (!canViewAllPatients(req.user?.role)) {
-      // Non-staff users can only upload for their own patients
-      patientFilter.createdBy = req.user.id;
+    let patient = null;
+    const isStaff = canViewAllPatients(req.user?.role);
+
+    // Try to find patient by ID first
+    patient = await Patient.findById(patientId);
+
+    // If not found and user is staff, try to find patient by createdBy (User ID)
+    if (!patient && isStaff) {
+      patient = await Patient.findOne({ createdBy: patientId });
     }
-    
-    const patient = await Patient.findOne(patientFilter);
+
+    // If still not found and user is NOT staff, find patient by ID with createdBy filter
+    if (!patient && !isStaff) {
+      patient = await Patient.findOne({ _id: patientId, createdBy: req.user.id });
+    }
     if (!patient) {
       // Delete the already-uploaded Cloudinary file
       if (req.file.filename) {
@@ -82,7 +90,7 @@ export const uploadReport = async (req, res) => {
     const uploaderRole = mapUploaderRole(req.user?.role);
 
     const report = await Report.create({
-      patientId,
+      patientId: patient._id,  // ← Use the found patient's MongoDB ID
       uploadedBy: req.user.id,
       uploadedByRole: uploaderRole,
       uploaded_by: uploaderRole,
@@ -153,8 +161,8 @@ export const getAllReports = async (req, res) => {
     
     let query;
     if (isStaff) {
-      // Staff can see all reports
-      query = Report.find();
+      // Staff can see only STAFF/ADMIN uploaded reports, NOT patient-uploaded reports
+      query = Report.find({ uploadedByRole: { $in: ["STAFF", "ADMIN"] } });
     } else {
       // Non-staff users can only see reports for their own patients
       const userPatients = await Patient.find({ createdBy: req.user.id }).select("_id");
