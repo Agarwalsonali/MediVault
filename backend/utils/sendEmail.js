@@ -484,3 +484,93 @@ export const sendSupportRequestNotificationEmail = async ({
 
   return sendEmail(to, subject, text, html);
 };
+
+/* ─────────────────────────────────────────
+   5. SECURITY ALERT EMAIL
+   Sent when multiple failed login attempts
+   are detected and account is locked
+───────────────────────────────────────── */
+export const sendSecurityAlertEmail = async (email, fullName = "User") => {
+  const subject = "Security Alert - MediVault";
+  const text = `Hi ${fullName},\n\nWe detected multiple failed login attempts on your MediVault account. For your security, your account has been temporarily locked for 15 minutes.\n\nIf this wasn't you, please reset your password immediately.\n\nBest regards,\nMediVault Security Team`;
+
+  const html = emailShell({
+    preheader: "Multiple failed login attempts detected — your account is temporarily locked",
+    body: `
+      <div style="
+        background: #fef2f2;
+        border-left: 4px solid #dc2626;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+      ">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <h2 style="
+              margin: 0 0 8px 0;
+              font-size: 18px;
+              font-weight: 600;
+              color: #dc2626;
+              letter-spacing: -0.3px;
+            ">Security Alert</h2>
+            <p style="
+              margin: 0;
+              font-size: 14px;
+              color: #7f1d1d;
+              line-height: 1.6;
+            ">
+              We detected <strong>multiple failed login attempts</strong> on your account. For your protection, your account has been temporarily locked for <strong>15 minutes</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin: 24px 0; line-height: 1.8;">
+        <p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">
+          <strong style="color: #0f172a;">What should you do?</strong>
+        </p>
+        <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px;">
+          <li style="margin-bottom: 10px;">If this was you, wait 15 minutes and try logging in again</li>
+          <li style="margin-bottom: 10px;">If you forgot your password, use the "Forgot Password" option</li>
+          <li style="margin-bottom: 10px;">If this wasn't you, <strong>reset your password immediately</strong> to secure your account</li>
+        </ul>
+      </div>
+
+      <div style="
+        background: #f0f9ff;
+        border: 1px solid #0284c7;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+      ">
+        <p style="
+          margin: 0;
+          font-size: 13px;
+          color: #0c4a6e;
+          line-height: 1.6;
+        ">
+          <strong>🔒 Account Details:</strong><br/>
+          Email: ${email}<br/>
+          Locked Duration: 15 minutes<br/>
+          Action Required: Try logging in after 15 minutes or reset your password
+        </p>
+      </div>
+
+      <p style="
+        margin: 20px 0;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.7;
+      ">
+        If you have any questions or concerns about this alert, please contact our support team.
+      </p>
+    `
+  });
+
+  return sendEmail(email, subject, text, html);
+};

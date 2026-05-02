@@ -107,6 +107,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ""
+  },
+
+  // Security tracking
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+
+  lockUntil: {
+    type: Date,
+    default: null
   }
 
 }, { timestamps: true });

@@ -30,6 +30,16 @@ const reportSchema = new mongoose.Schema(
     fileName:   { type: String, required: true },
     fileSize:   { type: Number },
     mimeType:   { type: String },
+    
+    // Encryption metadata
+    encryptionIv: {
+      type: String,
+      default: null,                                 // ← Hex string (16 bytes) of IV used for encryption
+    },
+    isEncrypted: {
+      type: Boolean,
+      default: true,                                 // ← Whether file is encrypted
+    },
   },
   { timestamps: true }
 );

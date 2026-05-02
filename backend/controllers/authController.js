@@ -9,6 +9,7 @@ import {
   sendVerificationOtpEmail,
   sendPasswordResetOtpEmail,
   sendInviteEmail,
+  sendSecurityAlertEmail,
 } from "../utils/sendEmail.js";
 import { generate6DigitOtp } from "../utils/otp.js";
 import { validatePassword } from "../utils/passwordValidator.js";
@@ -84,6 +85,22 @@ export const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const timeRemaining = Math.ceil((user.lockUntil - new Date()) / 60000); // minutes
+      authLogger.warn(`Login attempt on locked account: ${email}`);
+      return res.status(429).json({ 
+        message: `Account temporarily locked. Try again in ${timeRemaining} minute(s).`,
+        lockedUntil: user.lockUntil
+      });
+    }
+
+    // Reset lock if it has expired
+    if (user.lockUntil && user.lockUntil <= new Date()) {
+      user.failedLoginAttempts = 0;
+      user.lockUntil = null;
+    }
+
     if (STAFF_ROLES.includes(user.role) && !user.isInviteAccepted) {
       return res.status(403).json({ message: "Please complete account setup from email" });
     }
@@ -93,11 +110,51 @@ export const loginUser = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      // Increment failed login attempts
+      user.failedLoginAttempts += 1;
+      
+      // Lock account after 5 failed attempts
+      if (user.failedLoginAttempts >= 5) {
+        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        await user.save();
+        
+        // Log security warning
+        authLogger.warn(`Account locked due to multiple failed login attempts: ${email}`, {
+          failedAttempts: user.failedLoginAttempts,
+          lockedUntil: user.lockUntil
+        });
+        
+        // Send security alert email
+        try {
+          await sendSecurityAlertEmail(email, user.fullName);
+        } catch (emailError) {
+          authLogger.error(`Failed to send security alert email to ${email}`, { error: emailError.message });
+        }
+        
+        return res.status(429).json({ 
+          message: "Account temporarily locked due to multiple failed login attempts. Please try again in 15 minutes.",
+          lockedUntil: user.lockUntil
+        });
+      }
+      
+      await user.save();
+      authLogger.warn(`Failed login attempt for user: ${email}`, { 
+        attemptNumber: user.failedLoginAttempts 
+      });
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     if (!user.isVerified) {
       return res.status(403).json({ message: "Please verify your email first" });
     }
+
+    // Successful login - reset failed attempts and lock
+    user.failedLoginAttempts = 0;
+    user.lockUntil = null;
+    await user.save();
+    
+    authLogger.info(`Successful login: ${email}`);
 
     // Issue JWT token directly - no OTP required for login
     const token = jwt.sign(
@@ -114,6 +171,7 @@ export const loginUser = async (req, res) => {
     });
 
   } catch (error) {
+    authLogger.error("Login error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message });
   }
 };

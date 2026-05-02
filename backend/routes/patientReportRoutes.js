@@ -1,7 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "../utils/cloudinary.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import {
   uploadPatientReport,
@@ -22,19 +20,9 @@ const ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    const ext = file.originalname.split(".").pop().toLowerCase();
-    const resourceType = ["jpg", "jpeg", "png", "webp", "tiff", "tif"].includes(ext) ? "image" : "raw";
-    return {
-      folder: `medivault/patient-reports/${req.user?.id || "unknown"}`,
-      resource_type: resourceType,
-      public_id: `${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`,
-      use_filename: true,
-    };
-  },
-});
+// Use memory storage instead of direct Cloudinary upload
+// Files stay in memory buffer so we can encrypt before uploading
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const ext = file.originalname.split(".").pop().toLowerCase();

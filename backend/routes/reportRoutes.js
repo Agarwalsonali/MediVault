@@ -1,7 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
-import cloudinary from "../utils/cloudinary.js";
 import {
   uploadReport,
   getReportsByPatient,
@@ -11,6 +9,7 @@ import {
   downloadReport,
   shareReport,
   getSharedReport,
+  downloadSharedReport,
 } from "../controllers/reportController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -35,24 +34,9 @@ const ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-// Cloudinary storage — files go to cloud, MongoDB gets the URL
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (req, file) => {
-    const ext = file.originalname.split(".").pop().toLowerCase();
-    // PDFs and docs as raw, images as image
-    const resourceType = ["jpg","jpeg","png","webp","tiff","tif"].includes(ext)
-      ? "image"
-      : "raw";
-
-    return {
-      folder: `medivault/reports/${req.body.patientId || "general"}`,
-      resource_type: resourceType,
-      public_id: `${Date.now()}-${file.originalname.replace(/\s+/g, "_")}`,
-      use_filename: true,
-    };
-  },
-});
+// Use memory storage instead of direct Cloudinary upload
+// Files stay in memory buffer so we can encrypt before uploading
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const ext = file.originalname.split(".").pop().toLowerCase();
@@ -69,8 +53,9 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB for X-rays / DICOM
 });
 
-// Public route - get shared report by token (no auth required)
+// Public routes - get shared report by token (no auth required)
 router.get("/shared/:token", getSharedReport);
+router.get("/shared/:token/download", downloadSharedReport);
 
 router.use(protect);
 

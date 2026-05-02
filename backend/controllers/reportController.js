@@ -4,6 +4,8 @@ import cloudinary from "../utils/cloudinary.js";
 import { reportLogger } from "../utils/logger.js";
 import { sanitizeString } from "../utils/sanitizer.js";
 import jwt from "jsonwebtoken";
+import { encryptFile, decryptFile, prepareEncryptedFile } from "../utils/encryption.js";
+import axios from "axios";
 
 // Report type categories for real-world medical context
 const VALID_REPORT_TYPES = [
@@ -54,7 +56,7 @@ export const uploadReport = async (req, res) => {
       });
     }
 
-    if (!req.file) {
+    if (!req.file || !req.file.buffer) {
       return res.status(400).json({ message: "File is required" });
     }
 
@@ -75,46 +77,98 @@ export const uploadReport = async (req, res) => {
       patient = await Patient.findOne({ _id: patientId, createdBy: req.user.id });
     }
     if (!patient) {
-      // Delete the already-uploaded Cloudinary file
-      if (req.file.filename) {
-        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" }).catch(() => {});
-        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "image" }).catch(() => {});
-      }
       return res.status(404).json({ message: "Patient not found or unauthorized" });
     }
 
-    // req.file.path is the Cloudinary secure URL (set by multer-storage-cloudinary)
-    const fileUrl = req.file.path;         // e.g. https://res.cloudinary.com/...
-    const publicId = req.file.filename;    // cloudinary public_id for deletion later
+    try {
+      // Encrypt file buffer
+      reportLogger.info("Encrypting file before upload", {
+        originalFileName: req.file.originalname,
+        originalSize: req.file.size,
+        patientId: patient._id
+      });
 
-    const uploaderRole = mapUploaderRole(req.user?.role);
+      const { encryptedBuffer, iv } = encryptFile(req.file.buffer);
 
-    const report = await Report.create({
-      patientId: patient._id,  // ← Use the found patient's MongoDB ID
-      uploadedBy: req.user.id,
-      uploadedByRole: uploaderRole,
-      uploaded_by: uploaderRole,
-      verified: req.user?.role === "Admin" || req.user?.role === "Doctor" || req.user?.role === "Nurse" || req.user?.role === "Staff",
-      reportName: reportName.trim(),
-      reportType,
-      reportDate: new Date(reportDate),
-      doctorName: doctorName ? doctorName.trim() : "",
-      notes: notes ? notes.trim() : "",
-      fileUrl,        // ← Cloudinary HTTPS link stored in MongoDB
-      publicId,       // ← for deletion from Cloudinary
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-    });
+      // Upload encrypted file to Cloudinary
+      reportLogger.info("Uploading encrypted file to Cloudinary", {
+        fileName: req.file.originalname,
+        encryptedSize: encryptedBuffer.length
+      });
 
-    const populatedReport = await Report.findById(report._id)
-      .populate("patientId", "name patientId gender age")
-      .populate("uploadedBy", "fullName email");
+      // Always use 'raw' resource type for encrypted files (no longer valid images)
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: `medivault/reports/${patient._id}`,
+            resource_type: "raw",
+            public_id: `${Date.now()}-${req.file.originalname.replace(/\s+/g, "_")}`,
+            use_filename: true,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
 
-    res.status(201).json({
-      message: "Report uploaded successfully",
-      report: populatedReport,
-    });
+        uploadStream.end(encryptedBuffer);
+      });
+
+      const fileUrl = uploadResult.secure_url;
+      const publicId = uploadResult.public_id;
+
+      const uploaderRole = mapUploaderRole(req.user?.role);
+
+      // Create report with encryption metadata
+      const report = await Report.create({
+        patientId: patient._id,
+        uploadedBy: req.user.id,
+        uploadedByRole: uploaderRole,
+        uploaded_by: uploaderRole,
+        verified: req.user?.role === "Admin" || req.user?.role === "Doctor" || req.user?.role === "Nurse" || req.user?.role === "Staff",
+        reportName: reportName.trim(),
+        reportType,
+        reportDate: new Date(reportDate),
+        doctorName: doctorName ? doctorName.trim() : "",
+        notes: notes ? notes.trim() : "",
+        fileUrl,
+        publicId,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        encryptionIv: iv,
+        isEncrypted: true
+      });
+
+      const populatedReport = await Report.findById(report._id)
+        .populate("patientId", "name patientId gender age")
+        .populate("uploadedBy", "fullName email");
+
+      reportLogger.info("Report uploaded and encrypted successfully", {
+        reportId: report._id,
+        fileName: report.fileName,
+        encrypted: true,
+        ivStored: !!iv
+      });
+
+      res.status(201).json({
+        message: "Report uploaded and encrypted successfully",
+        report: populatedReport,
+      });
+
+    } catch (encryptionError) {
+      reportLogger.error("Encryption or upload failed", {
+        error: encryptionError.message,
+        stack: encryptionError.stack,
+        fileName: req.file.originalname
+      });
+
+      return res.status(500).json({
+        message: "Failed to encrypt and upload file",
+        error: encryptionError.message
+      });
+    }
+
   } catch (error) {
     reportLogger.error("uploadReport error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message });
@@ -225,7 +279,64 @@ export const downloadReport = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: You don't have access to this report" });
     }
 
-    // Return the file URL and metadata (frontend will handle the download)
+    // If file is encrypted, download, decrypt, and send
+    if (report.isEncrypted && report.encryptionIv) {
+      try {
+        reportLogger.info("Downloading and decrypting file", {
+          reportId: report._id,
+          fileName: report.fileName
+        });
+
+        // Download encrypted file from Cloudinary
+        const response = await axios.get(report.fileUrl, {
+          responseType: "arraybuffer",
+          timeout: 30000
+        });
+
+        const encryptedBuffer = Buffer.from(response.data);
+
+        // Decrypt file
+        const decryptedBuffer = decryptFile(encryptedBuffer, report.encryptionIv);
+
+        // Set response headers for file download
+        res.setHeader("Content-Type", report.mimeType || "application/octet-stream");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${encodeURIComponent(report.fileName)}"`
+        );
+        res.setHeader("Content-Length", decryptedBuffer.length);
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+
+        reportLogger.info("File decrypted and sent successfully", {
+          reportId: report._id,
+          originalSize: report.fileSize,
+          decryptedSize: decryptedBuffer.length
+        });
+
+        return res.send(decryptedBuffer);
+
+      } catch (decryptionError) {
+        reportLogger.error("Failed to decrypt and download file", {
+          error: decryptionError.message,
+          reportId: report._id,
+          stack: decryptionError.stack
+        });
+
+        return res.status(500).json({
+          message: "Failed to decrypt file",
+          error: decryptionError.message
+        });
+      }
+    }
+
+    // Fallback: If file is not encrypted, return URL (legacy support)
+    reportLogger.warn("Downloading unencrypted file (legacy)", {
+      reportId: report._id,
+      fileName: report.fileName
+    });
+
     res.status(200).json({
       message: "Download authorized",
       download: {
@@ -234,10 +345,13 @@ export const downloadReport = async (req, res) => {
         fileUrl: report.fileUrl,
         reportName: report.reportName,
         mimeType: report.mimeType,
-        fileSize: report.fileSize
+        fileSize: report.fileSize,
+        isEncrypted: report.isEncrypted
       }
     });
+
   } catch (error) {
+    reportLogger.error("downloadReport error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message });
   }
 };
@@ -245,14 +359,23 @@ export const downloadReport = async (req, res) => {
 // Share report with doctor - generates secure 30-minute link
 export const shareReport = async (req, res) => {
   try {
-    const report = await Report.findById(req.params.id).populate("patientId");
+    // Populate patient with createdBy user reference
+    const report = await Report.findById(req.params.id)
+      .populate({
+        path: "patientId",
+        populate: { path: "createdBy" }
+      });
+    
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }
 
-    // Security: Only the report uploader can share it
-    if (report.uploadedBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized: Only uploader can share" });
+    // Security: Only the report uploader OR the patient who owns the report can share it
+    const isUploader = report.uploadedBy.toString() === req.user.id;
+    const isPatientOwner = report.patientId?.createdBy?._id.toString() === req.user.id;
+
+    if (!isUploader && !isPatientOwner) {
+      return res.status(403).json({ message: "Unauthorized: Only uploader or patient can share" });
     }
 
     // Generate share token (30 minutes expiry)
@@ -333,6 +456,98 @@ export const getSharedReport = async (req, res) => {
     });
   } catch (error) {
     reportLogger.error(`Get shared report error: ${error.message}`);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Download decrypted shared report file - public endpoint
+export const downloadSharedReport = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ 
+        message: err.name === "TokenExpiredError" ? "Link expired" : "Invalid link" 
+      });
+    }
+
+    // Check token type
+    if (decoded.type !== "report-share" || decoded.role !== "doctor-access") {
+      return res.status(401).json({ message: "Invalid link" });
+    }
+
+    // Fetch report
+    const report = await Report.findById(decoded.reportId);
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // If file is encrypted, download and decrypt
+    if (report.isEncrypted && report.encryptionIv) {
+      try {
+        reportLogger.info("Downloading and decrypting shared file", {
+          reportId: report._id,
+          fileName: report.fileName
+        });
+
+        // Download encrypted file from Cloudinary
+        const response = await axios.get(report.fileUrl, {
+          responseType: "arraybuffer",
+          timeout: 30000
+        });
+
+        const encryptedBuffer = Buffer.from(response.data);
+
+        // Decrypt file
+        const decryptedBuffer = decryptFile(encryptedBuffer, report.encryptionIv);
+
+        // Set response headers for file download
+        res.setHeader("Content-Type", report.mimeType || "application/octet-stream");
+        res.setHeader(
+          "Content-Disposition",
+          `inline; filename="${encodeURIComponent(report.fileName)}"`
+        );
+        res.setHeader("Content-Length", decryptedBuffer.length);
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+
+        reportLogger.info("Shared file decrypted and sent successfully", {
+          reportId: report._id,
+          fileName: report.fileName,
+          decryptedSize: decryptedBuffer.length
+        });
+
+        return res.send(decryptedBuffer);
+
+      } catch (decryptionError) {
+        reportLogger.error("Failed to decrypt shared file", {
+          error: decryptionError.message,
+          reportId: report._id,
+          stack: decryptionError.stack
+        });
+
+        return res.status(500).json({
+          message: "Failed to decrypt file",
+          error: decryptionError.message
+        });
+      }
+    }
+
+    // Fallback: If file is not encrypted, redirect to Cloudinary URL
+    reportLogger.warn("Accessing unencrypted shared file (legacy)", {
+      reportId: report._id,
+      fileName: report.fileName
+    });
+
+    res.redirect(report.fileUrl);
+
+  } catch (error) {
+    reportLogger.error("Download shared report error", { error: error.message, stack: error.stack });
     res.status(500).json({ message: error.message });
   }
 };

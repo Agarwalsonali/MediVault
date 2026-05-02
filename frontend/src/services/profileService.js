@@ -120,6 +120,7 @@ export const getPatientReports = async () => {
 
 /**
  * Get download authorization and file URL for a report
+ * Handles both encrypted (blob) and unencrypted (JSON URL) responses
  * @param {string} reportId - Report ID
  */
 export const getReportDownloadUrl = async (reportId) => {
@@ -130,8 +131,41 @@ export const getReportDownloadUrl = async (reportId) => {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      responseType: 'arraybuffer', // Handle both JSON and binary responses
     });
-    return response.data.download;
+
+    // Check if response is JSON or binary
+    const contentType = response.headers['content-type'];
+    
+    if (contentType && contentType.includes('application/json')) {
+      // Unencrypted file - contains fileUrl in JSON
+      const decoder = new TextDecoder();
+      const jsonString = decoder.decode(response.data);
+      const jsonData = JSON.parse(jsonString);
+      return jsonData.download;
+    } else {
+      // Encrypted file - binary data received, create blob URL
+      const contentDisposition = response.headers['content-disposition'];
+      let fileName = 'report';
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch) {
+          fileName = decodeURIComponent(fileNameMatch[1]);
+        }
+      }
+      
+      const mimeType = contentType || 'application/octet-stream';
+      const blob = new Blob([response.data], { type: mimeType });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      return {
+        fileUrl: blobUrl,
+        fileName: fileName,
+        isBlob: true,
+        mimeType: mimeType
+      };
+    }
   } catch (error) {
     throw error.response?.data || { message: 'Failed to authorize download' };
   }
@@ -139,6 +173,7 @@ export const getReportDownloadUrl = async (reportId) => {
 
 /**
  * Download a report file
+ * Handles both blob and URL downloads
  * @param {string} reportId - Report ID
  */
 export const downloadReport = async (reportId) => {
@@ -150,11 +185,14 @@ export const downloadReport = async (reportId) => {
     link.href = downloadData.fileUrl;
     link.download = downloadData.fileName || 'report';
     
-    // For PDFs and images, we might want to open in new tab instead
-    // But for actual download, use this:
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Clean up blob URL after download
+    if (downloadData.isBlob) {
+      setTimeout(() => URL.revokeObjectURL(downloadData.fileUrl), 100);
+    }
     
     return downloadData;
   } catch (error) {
@@ -164,12 +202,14 @@ export const downloadReport = async (reportId) => {
 
 /**
  * View a report file (opens in new tab)
+ * Handles both blob and URL viewing
  * @param {string} reportId - Report ID
  */
 export const viewReport = async (reportId) => {
   try {
     const downloadData = await getReportDownloadUrl(reportId);
-    window.open(downloadData.fileUrl, '_blank');
+    const win = window.open(downloadData.fileUrl, '_blank');
+    // Browser will handle blob URL cleanup when tab closes
     return downloadData;
   } catch (error) {
     throw error;

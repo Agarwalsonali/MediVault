@@ -2,6 +2,10 @@ import Report from "../models/report.js";
 import Patient from "../models/patient.js";
 import User from "../models/user.js";
 import cloudinary from "../utils/cloudinary.js";
+import { createFeatureLogger } from "../utils/logger.js";
+import { encryptFile, decryptFile } from "../utils/encryption.js";
+
+const reportLogger = createFeatureLogger("report");
 
 const VALID_REPORT_TYPES = [
   "Blood Test",
@@ -105,40 +109,94 @@ export const uploadPatientReport = async (req, res) => {
     if (reportDate) {
       parsedDate = new Date(reportDate);
       if (Number.isNaN(parsedDate.getTime())) {
-        if (req.file?.filename) {
-          await cloudinary.uploader.destroy(req.file.filename, { resource_type: "raw" }).catch(() => {});
-          await cloudinary.uploader.destroy(req.file.filename, { resource_type: "image" }).catch(() => {});
-        }
         return res.status(400).json({ message: "Invalid report date" });
       }
     }
 
-    const report = await Report.create({
-      patientId: patient._id,
-      uploadedBy: req.user.id,
-      uploadedByRole: "PATIENT",
-      uploaded_by: "PATIENT",
-      verified: false,
-      reportName: reportName.trim(),
-      reportType: normalizedType,
-      reportDate: parsedDate,
-      notes: notes ? notes.trim() : "",
-      doctorName: doctorName ? doctorName.trim() : "",
-      fileUrl: req.file.path,
-      publicId: req.file.filename,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-    });
+    try {
+      // Encrypt file buffer
+      reportLogger.info("Encrypting patient report before upload", {
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        patientId: patient._id
+      });
 
-    const populated = await Report.findById(report._id)
-      .select("_id reportName reportType reportDate notes fileUrl fileName fileSize mimeType uploadedByRole uploaded_by verified createdAt")
-      .populate("uploadedBy", "fullName role");
+      const { encryptedBuffer, iv } = encryptFile(req.file.buffer);
 
-    return res.status(201).json({
-      message: "Report uploaded successfully",
-      report: populated,
-    });
+      // Upload encrypted file to Cloudinary
+      reportLogger.info("Uploading encrypted patient report to Cloudinary", {
+        fileName: req.file.originalname,
+        encryptedSize: encryptedBuffer.length
+      });
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: `medivault/patient-reports/${req.user.id}`,
+            resource_type: "raw",
+            public_id: `${Date.now()}-${req.file.originalname.replace(/\s+/g, "_")}`,
+            use_filename: true,
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+
+        uploadStream.end(encryptedBuffer);
+      });
+
+      const fileUrl = uploadResult.secure_url;
+      const publicId = uploadResult.public_id;
+
+      const report = await Report.create({
+        patientId: patient._id,
+        uploadedBy: req.user.id,
+        uploadedByRole: "PATIENT",
+        uploaded_by: "PATIENT",
+        verified: false,
+        reportName: reportName.trim(),
+        reportType: normalizedType,
+        reportDate: parsedDate,
+        notes: notes ? notes.trim() : "",
+        doctorName: doctorName ? doctorName.trim() : "",
+        fileUrl,
+        publicId,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        encryptionIv: iv,
+        isEncrypted: true
+      });
+
+      const populated = await Report.findById(report._id)
+        .select("_id reportName reportType reportDate notes fileUrl fileName fileSize mimeType uploadedByRole uploaded_by verified createdAt encryptionIv isEncrypted")
+        .populate("uploadedBy", "fullName role");
+
+      reportLogger.info("Patient report uploaded and encrypted successfully", {
+        reportId: report._id,
+        fileName: report.fileName,
+        encrypted: true,
+        ivStored: !!iv
+      });
+
+      return res.status(201).json({
+        message: "Report uploaded and encrypted successfully",
+        report: populated,
+      });
+
+    } catch (encryptionError) {
+      reportLogger.error("Encryption or upload failed", {
+        error: encryptionError.message,
+        stack: encryptionError.stack,
+        fileName: req.file.originalname
+      });
+
+      return res.status(500).json({
+        message: "Failed to encrypt and upload file",
+        error: encryptionError.message
+      });
+    }
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

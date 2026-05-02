@@ -54,20 +54,32 @@ export default function SharedReport() {
   };
 
   const handleView = () => {
-    if (report?.fileUrl) {
+    if (token) {
       setViewing(true);
-      window.open(report.fileUrl, '_blank');
+      // Use the decryption endpoint to view the file
+      const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+      const API_BASE_URL = RAW_API_URL || '/api';
+      const viewUrl = `${API_BASE_URL}/reports/shared/${token}/download`;
+      window.open(viewUrl, '_blank');
       setTimeout(() => setViewing(false), 1000);
     }
   };
 
   const handleDownload = async () => {
-    if (report?.fileUrl && report?.fileName) {
+    if (token && report?.fileName) {
       try {
         setDownloading(true);
         
-        // Fetch the file from Cloudinary
-        const response = await fetch(report.fileUrl);
+        const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+        const API_BASE_URL = RAW_API_URL || '/api';
+        
+        // Fetch the decrypted file from the backend
+        const response = await fetch(`${API_BASE_URL}/reports/shared/${token}/download`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to download report');
+        }
+        
         const blob = await response.blob();
         
         // Create blob URL and trigger download
