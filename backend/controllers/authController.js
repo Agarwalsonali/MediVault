@@ -15,6 +15,7 @@ import { generate6DigitOtp } from "../utils/otp.js";
 import { validatePassword } from "../utils/passwordValidator.js";
 import { authLogger } from "../utils/logger.js";
 import { sanitizeString, sanitizeEmail } from "../utils/sanitizer.js";
+import { logActivityWithRequest } from "../utils/activityLogger.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
 const AVATARS_DIR = path.join(process.cwd(), "uploads", "avatars");
@@ -88,6 +89,19 @@ export const loginUser = async (req, res) => {
     // Check if account is locked
     if (user.lockUntil && user.lockUntil > new Date()) {
       const timeRemaining = Math.ceil((user.lockUntil - new Date()) / 60000); // minutes
+      
+      // Log locked account access attempt
+      logActivityWithRequest(req, {
+        userId: user._id,
+        userName: user.fullName,
+        userRole: user.role,
+        action: "LOGIN_FAILED",
+        resourceType: "USER",
+        resourceId: user._id,
+        status: "FAILED",
+        errorMessage: "Account is locked"
+      }).catch(err => authLogger.error("Failed to log locked account access", { error: err.message }));
+
       authLogger.warn(`Login attempt on locked account: ${email}`);
       return res.status(429).json({ 
         message: `Account temporarily locked. Try again in ${timeRemaining} minute(s).`,
@@ -114,10 +128,34 @@ export const loginUser = async (req, res) => {
       // Increment failed login attempts
       user.failedLoginAttempts += 1;
       
+      // Log failed login attempt
+      logActivityWithRequest(req, {
+        userId: user._id,
+        userName: user.fullName,
+        userRole: user.role,
+        action: "LOGIN_FAILED",
+        resourceType: "USER",
+        resourceId: user._id,
+        status: "FAILED",
+        errorMessage: "Invalid password"
+      }).catch(err => authLogger.error("Failed to log login attempt", { error: err.message }));
+
       // Lock account after 5 failed attempts
       if (user.failedLoginAttempts >= 5) {
         user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
         await user.save();
+        
+        // Log account locked
+        logActivityWithRequest(req, {
+          userId: user._id,
+          userName: user.fullName,
+          userRole: user.role,
+          action: "ACCOUNT_LOCKED",
+          resourceType: "USER",
+          resourceId: user._id,
+          status: "SUCCESS",
+          details: { reason: "Multiple failed login attempts", attempts: user.failedLoginAttempts }
+        }).catch(err => authLogger.error("Failed to log account locked", { error: err.message }));
         
         // Log security warning
         authLogger.warn(`Account locked due to multiple failed login attempts: ${email}`, {
@@ -153,6 +191,17 @@ export const loginUser = async (req, res) => {
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
     await user.save();
+    
+    // Log successful login
+    logActivityWithRequest(req, {
+      userId: user._id,
+      userName: user.fullName,
+      userRole: user.role,
+      action: "LOGIN",
+      resourceType: "USER",
+      resourceId: user._id,
+      status: "SUCCESS"
+    }).catch(err => authLogger.error("Failed to log login", { error: err.message }));
     
     authLogger.info(`Successful login: ${email}`);
 

@@ -11,14 +11,32 @@ import reportRoutes from "./routes/reportRoutes.js";
 import patientReportRoutes from "./routes/patientReportRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import activityRoutes from "./routes/activityRoutes.js";
 import logger from "./utils/logger.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
 // Load environment variables
 dotenv.config();
 
+console.log("Starting backend server...");
+console.log("PORT:", process.env.PORT);
+console.log("MONGO_URL:", process.env.MONGO_URL ? "configured" : "NOT SET");
+
+// Add simple error handlers
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err.message);
+  console.error(err.stack);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION:", reason);
+});
+
 const app = express();
 const PORT = process.env.PORT;
+
+console.log("Express app created, setting up middleware...");
 
 app.use(express.json());
 app.use(requestLogger);
@@ -34,14 +52,28 @@ app.use(
 // Serve static files for uploads
 app.use("/uploads", express.static("uploads"));
 
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => logger.info("MongoDB Connected"))
-  .catch((err) => logger.error("MongoDB connection failed", { error: err.message, stack: err.stack }));
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URL, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+})
+  .then(() => {
+    console.log("MongoDB Connected");
+    logger.info("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection failed:", err.message);
+    logger.error("MongoDB connection failed", { error: err.message, stack: err.stack });
+    // Don't exit, let the app run in case DB comes back online
+  });
 
 //sendEmail("agarwalsonali922@gmail.com", "Test Email", "Hello OTP Test");
 
+console.log("Mounting routes...");
+
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/activity", activityRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/reports", reportRoutes);
@@ -64,4 +96,9 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ message: "Internal Server Error" });
 });
 
-app.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+console.log("All routes mounted, starting server...");
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
+});

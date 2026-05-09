@@ -78,10 +78,83 @@ export const getDashboardStats = async () => {
   }
 };
 
+export const getActivityLogs = async (query = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (query.page) params.append('page', query.page);
+    if (query.limit) params.append('limit', query.limit);
+    if (query.action) params.append('action', query.action);
+    if (query.userRole) params.append('userRole', query.userRole);
+    if (query.resourceType) params.append('resourceType', query.resourceType);
+    if (query.status) params.append('status', query.status);
+    if (query.userName) params.append('userName', query.userName);
+
+    const response = await adminApi.get(`/activity/?${params.toString()}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const getFailedLogins = async (query = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (query.startDate) params.append('startDate', query.startDate);
+    if (query.endDate) params.append('endDate', query.endDate);
+
+    const response = await adminApi.get(`/activity/failed-logins?${params.toString()}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const getActivityStats = async (query = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (query.startDate) params.append('startDate', query.startDate);
+    if (query.endDate) params.append('endDate', query.endDate);
+
+    const response = await adminApi.get(`/activity/stats?${params.toString()}`);
+    return response.data.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const exportActivityLogs = async (query = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (query.action) params.append('action', query.action);
+    if (query.userRole) params.append('userRole', query.userRole);
+    if (query.resourceType) params.append('resourceType', query.resourceType);
+    if (query.status) params.append('status', query.status);
+
+    const response = await adminApi.get(`/activity/export/csv?${params.toString()}`, {
+      responseType: 'blob'
+    });
+
+    // Create a blob and download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `activity-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
 export default {
   createStaffUser,
   fetchStaffUsers,
   updateStaffUser,
   deleteStaffUser,
   getDashboardStats,
+  getActivityLogs,
+  getFailedLogins,
+  getActivityStats,
+  exportActivityLogs,
 };

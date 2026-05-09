@@ -1,0 +1,36 @@
+{
+  "name": "mrms-backend",
+  "version": "1.0.0",
+  "description": "Medical Records Management System Backend",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "dev": "nodemon index.js",
+    "prod": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "*",
+    "bcryptjs": "*",
+    "cloudinary": "*",
+    "cors": "*",
+    "dotenv": "*",
+    "express": "*",
+    "express-validator": "*",
+    "jsonwebtoken": "*",
+    "mongoose": "*",
+    "multer": "*",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemailer": "*",
+    "winston": "*",
+    "winston-daily-rotate-file": "*",
+    "xss": "*"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
