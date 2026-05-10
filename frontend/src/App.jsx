@@ -73,8 +73,8 @@ function AdminOnlyRoute({ children }) {
 
 // Session timeout manager component
 function SessionTimeoutManager({ isAuthenticated, children }) {
-  // Enable session timeout only when user is authenticated (300 minutes)
-  useSessionTimeout(isAuthenticated ? 300 : false);
+  // Enable session timeout only when user is authenticated (2 days = 2880 minutes)
+  useSessionTimeout(isAuthenticated ? 2880 : false);
   return children;
 }
 

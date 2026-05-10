@@ -1,8 +1,10 @@
 import Report from "../models/report.js";
 import Patient from "../models/patient.js";
+import User from "../models/user.js";
 import cloudinary from "../utils/cloudinary.js";
 import { reportLogger } from "../utils/logger.js";
 import { sanitizeString } from "../utils/sanitizer.js";
+import { createNotification, createBulkNotifications } from "../utils/notificationHelper.js";
 import jwt from "jsonwebtoken";
 import { encryptFile, decryptFile, prepareEncryptedFile } from "../utils/encryption.js";
 import axios from "axios";
@@ -150,6 +152,54 @@ export const uploadReport = async (req, res) => {
         encrypted: true,
         ivStored: !!iv
       });
+
+      // Create notifications based on who uploaded the report
+      try {
+        const uploaderRole = req.user?.role;
+        const patientName = patient?.name || "Patient";
+        const uploaderName = req.user?.fullName || "A user";
+
+        if (uploaderRole === "Patient") {
+          // Notify admins and staff when patient uploads a report
+          const adminStaffUsers = await User.find({ role: { $in: ["Admin", "Doctor", "Nurse", "Staff"] } }).select("_id");
+          const adminStaffIds = adminStaffUsers.map(u => u._id);
+          
+          await createBulkNotifications(
+            adminStaffIds,
+            "PATIENT_UPLOADED_REPORT",
+            "New Patient Report",
+            `${patientName} uploaded a new report: ${reportName}`,
+            "/admin-dashboard",
+            { resourceId: report._id, resourceType: "Report" }
+          );
+        } else {
+          // Notify admins when staff/doctor/nurse uploads a report
+          const adminUsers = await User.find({ role: "Admin" }).select("_id");
+          const adminIds = adminUsers.map(u => u._id);
+          
+          await createBulkNotifications(
+            adminIds,
+            "NEW_STAFF_REPORT",
+            "New Report Uploaded",
+            `${uploaderName} uploaded a report for ${patientName}`,
+            "/admin-dashboard",
+            { resourceId: report._id, resourceType: "Report" }
+          );
+
+          // Also notify patient if a staff member uploaded their report
+          await createNotification(
+            patient.createdBy || patientId,
+            "REPORT_UPLOADED",
+            "New Report",
+            `${uploaderName} uploaded a report: ${reportName}`,
+            "/dashboard/reports",
+            { resourceId: report._id, resourceType: "Report" }
+          );
+        }
+      } catch (notifyErr) {
+        reportLogger.error("Failed to create notifications", { error: notifyErr.message });
+        // Don't fail the upload if notifications fail
+      }
 
       res.status(201).json({
         message: "Report uploaded and encrypted successfully",

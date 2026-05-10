@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Activity, Sun, Moon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, Activity, Sun, Moon, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loginUser, getDashboardPathByRole, getLoginEmail } from '../services/authService.js';
 import { useTheme } from '../hooks/useTheme.js';
@@ -12,6 +12,16 @@ export default function Login() {
   const [error, setError]       = useState('');
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [sessionMessage, setSessionMessage] = useState('');
+
+  useEffect(() => {
+    // Display session expired message if redirected from auto-logout
+    if (location.state?.sessionExpired && location.state?.message) {
+      setSessionMessage(location.state.message);
+      toast.info(location.state.message);
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -93,6 +103,24 @@ export default function Login() {
             <h1 className="auth-form-title">Welcome back</h1>
             <p className="auth-form-subtitle">Sign in to your MediVault account</p>
           </div>
+
+          {/* Session expired alert */}
+          {sessionMessage && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '0.75rem', 
+              padding: '0.875rem 1rem', 
+              marginBottom: '1rem', 
+              borderRadius: 'var(--radius-lg)', 
+              backgroundColor: '#fef3c7', 
+              border: '1px solid #fcd34d',
+              animation: 'fadeIn 0.3s ease-in'
+            }}>
+              <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: '0.125rem' }} />
+              <p style={{ fontSize: '0.875rem', color: '#92400e', margin: 0, lineHeight: 1.5 }}>{sessionMessage}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             {/* Email */}

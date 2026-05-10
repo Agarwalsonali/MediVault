@@ -16,6 +16,7 @@ import { validatePassword } from "../utils/passwordValidator.js";
 import { authLogger } from "../utils/logger.js";
 import { sanitizeString, sanitizeEmail } from "../utils/sanitizer.js";
 import { logActivityWithRequest } from "../utils/activityLogger.js";
+import { createNotification, createBulkNotifications } from "../utils/notificationHelper.js";
 
 const STAFF_ROLES = ["Staff", "Nurse"];
 const AVATARS_DIR = path.join(process.cwd(), "uploads", "avatars");
@@ -478,6 +479,23 @@ export const createStaffAccount = async (req, res) => {
 
     await sendInviteEmail(email, inviteLink);
 
+    // Notify all admins about the new staff member
+    try {
+      const adminUsers = await User.find({ role: "Admin" }).select("_id");
+      const adminIds = adminUsers.map(u => u._id);
+      
+      await createBulkNotifications(
+        adminIds,
+        "NEW_STAFF_CREATED",
+        "New Staff Member Added",
+        `${fullName} has been added as a ${role}. Invite email sent.`,
+        "/manage-staff",
+        { resourceId: staffUser._id, resourceType: "User" }
+      );
+    } catch (notifyErr) {
+      authLogger.error("Failed to create staff creation notifications", { error: notifyErr.message });
+    }
+
     return res.status(201).json({
       message: `${role} account created and invite email sent successfully`,
       user: {
@@ -765,7 +783,25 @@ export const deleteStaffMember = async (req, res) => {
       return res.status(400).json({ message: "Only Nurse or Staff users can be deleted" });
     }
 
+    const staffName = staff.fullName || staff.email;
     await User.deleteOne({ _id: staff._id });
+
+    // Notify all admins about staff deletion
+    try {
+      const adminUsers = await User.find({ role: "Admin" }).select("_id");
+      const adminIds = adminUsers.map(u => u._id);
+      
+      await createBulkNotifications(
+        adminIds,
+        "STAFF_DELETED",
+        "Staff Member Removed",
+        `${staffName} (${staff.role}) has been removed from the system.`,
+        "/manage-staff",
+        { resourceId: staff._id, resourceType: "User" }
+      );
+    } catch (notifyErr) {
+      authLogger.error("Failed to create staff deletion notifications", { error: notifyErr.message });
+    }
 
     return res.status(200).json({ message: "Staff deleted successfully" });
   } catch (error) {

@@ -12,6 +12,7 @@ import patientReportRoutes from "./routes/patientReportRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import logger from "./utils/logger.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 
@@ -74,6 +75,7 @@ console.log("Mounting routes...");
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/activity", activityRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/reports", reportRoutes);
