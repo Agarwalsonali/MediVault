@@ -219,7 +219,7 @@ export default function DashboardLayout() {
             <div className="dash-user-avatar">{userInitials}</div>
             {!sidebarCollapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="dash-user-name">{user?.fullName || user?.name || 'User'}</div>
+                <div className="dash-user-name" style={{ color: '#ffffff' }}>{user?.fullName || user?.name || 'User'}</div>
                 <div className="dash-user-role">{role}</div>
               </div>
             )}

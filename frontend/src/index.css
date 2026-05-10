@@ -287,11 +287,24 @@
 }
 
 [data-theme="dark"] .dash-user-name {
-  color: var(--mv-slate-900) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .dash-sidebar-user-card .dash-user-name {
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] .dash-user-role {
   color: var(--mv-slate) !important;
+}
+
+/* Light mode sidebar user card fixes - ensure white text on dark background */
+[data-theme="light"] .dash-user-name {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .dash-sidebar-user-card .dash-user-name {
+  color: #ffffff !important;
 }
 
 /* Dark mode form elements */
@@ -1470,7 +1483,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
 .dash-user-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--mv-white);
+  color: #f8fafc !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

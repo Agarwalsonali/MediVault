@@ -147,6 +147,22 @@ export const exportActivityLogs = async (query = {}) => {
   }
 };
 
+/**
+ * Delete old activity logs (cleanup)
+ * @param {number} daysToKeep - Number of days to keep logs (default 90)
+ * @returns {Promise} Result with deleted count
+ */
+export const cleanupOldActivityLogs = async (daysToKeep = 90) => {
+  try {
+    const response = await adminApi.delete('/activity/cleanup', {
+      data: { daysToKeep }
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
 export default {
   createStaffUser,
   fetchStaffUsers,
@@ -157,4 +173,5 @@ export default {
   getFailedLogins,
   getActivityStats,
   exportActivityLogs,
+  cleanupOldActivityLogs,
 };

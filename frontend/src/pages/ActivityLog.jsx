@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, Activity, Loader, AlertCircle, Search, Filter, Download, RefreshCw, Clock } from 'lucide-react';
+import { ChevronLeft, Activity, Loader, AlertCircle, Search, Filter, Download, RefreshCw, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getActivityLogs, getFailedLogins, getActivityStats, exportActivityLogs } from '../services/adminService.js';
+import { getActivityLogs, getFailedLogins, getActivityStats, exportActivityLogs, cleanupOldActivityLogs } from '../services/adminService.js';
+import { toast } from 'react-toastify';
 
 const ACTION_COLORS = {
   LOGIN: 'bg-green-50 text-green-700 border-green-200',
@@ -40,6 +41,7 @@ export default function ActivityLog() {
   const [stats, setStats] = useState({});
   const [exporting, setExporting] = useState(false);
   const [failedLoginsCount, setFailedLoginsCount] = useState(0);
+  const [cleaning, setCleaning] = useState(false);
 
   const fetchActivityLogs = useCallback(async () => {
     try {
@@ -106,6 +108,28 @@ export default function ActivityLog() {
       setError(err.message || 'Failed to export logs');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleCleanup = async () => {
+    if (!window.confirm('Are you sure you want to delete all activity logs? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setCleaning(true);
+      const result = await cleanupOldActivityLogs(0); // 0 days means delete all
+      toast.success(`${result.deletedCount} activity logs have been deleted.`);
+      // Refresh the activity logs
+      await fetchActivityLogs();
+      await fetchActivityStats();
+      setError('');
+    } catch (err) {
+      const errorMsg = err.message || 'Failed to cleanup activity logs';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -333,13 +357,37 @@ export default function ActivityLog() {
 
       {/* Activity Monitor Table */}
       <div className="mv-card animate-fade-up">
-        <div className="mv-card-header">
+        <div className="mv-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Clock size={18} className="text-teal-600" />
             <p className="mv-card-title" style={{ margin: 0 }}>
               Activity Trace Monitor
             </p>
           </div>
+          <button
+            onClick={handleCleanup}
+            disabled={cleaning}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--mv-red)',
+              color: 'white',
+              border: 'none',
+              cursor: cleaning ? 'not-allowed' : 'pointer',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              opacity: cleaning ? 0.6 : 1,
+              transition: 'opacity 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Trash2 size={14} />
+            {cleaning ? 'Clearing...' : 'Clear Logs'}
+          </button>
         </div>
         <div className="mv-card-body" style={{ padding: 0 }}>
           {loading ? (
