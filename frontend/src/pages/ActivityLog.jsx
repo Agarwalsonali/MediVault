@@ -140,45 +140,47 @@ export default function ActivityLog() {
 
   return (
     <div className="dash-page">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate('/admin-dashboard')}
-          className="flex items-center justify-center w-10 h-10 rounded-xl border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-colors"
-          title="Back to dashboard"
-        >
-          <ChevronLeft size={20} className="text-slate-300" />
-        </button>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#4b5563', margin: 0 }}>
-            Activity Monitor
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: '#667a8a', margin: '4px 0 0 0' }}>
-            Real-time system activity and audit logs
-          </p>
+      {/* Desktop Header - Hidden on mobile */}
+      <div className="hidden lg:block" style={{ marginBottom: '1.75rem' }}>
+        <h1 className="dash-page-title">Activity Monitor</h1>
+        <p className="dash-page-subtitle">Real-time system activity and audit logs</p>
+      </div>
+
+      {/* Mobile Header Card - Hidden on desktop */}
+      <div className="lg:hidden mv-card animate-fade-up" style={{ marginBottom: '1.25rem' }}>
+        <div className="mv-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, background: 'var(--mv-teal-pale)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity size={18} color="var(--mv-teal)" />
+            </div>
+            <div>
+              <p className="mv-card-title" style={{ margin: 0 }}>Activity Monitor</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--mv-slate)', margin: '2px 0 0 0' }}>System activity logs</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Error display */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', borderRadius: '0.75rem', border: '1px solid #fecaca', backgroundColor: '#fee2e2', padding: '0.75rem 1rem', marginBottom: '1rem' }}>
-          <AlertCircle size={16} className="text-red-600 flex-none" />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', borderRadius: '0.75rem', border: '1px solid #fecaca', backgroundColor: '#fee2e2', padding: '0.75rem 1rem', marginBottom: '1rem' }}>
+          <AlertCircle size={16} className="text-red-600 flex-none mt-0.5" />
           <p style={{ fontSize: '0.875rem', color: '#991b1b', margin: 0 }}>{error}</p>
         </div>
       )}
 
       {/* Stats Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <div className="mv-card" style={{ padding: '1rem' }}>
-          <p style={{ fontSize: '0.75rem', color: '#667a8a', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Total Activities</p>
+          <p style={{ fontSize: '0.7rem', color: 'var(--mv-slate)', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Total Activities</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--mv-teal)', margin: '8px 0 0 0' }}>{totalLogs}</p>
         </div>
         <div className="mv-card" style={{ padding: '1rem' }}>
-          <p style={{ fontSize: '0.75rem', color: '#667a8a', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Failed Logins</p>
+          <p style={{ fontSize: '0.7rem', color: 'var(--mv-slate)', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Failed Logins</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 700, color: failedLoginsCount > 5 ? 'var(--mv-danger)' : 'var(--mv-navy)', margin: '8px 0 0 0' }}>{failedLoginsCount}</p>
         </div>
         <div className="mv-card" style={{ padding: '1rem' }}>
-          <p style={{ fontSize: '0.75rem', color: '#667a8a', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Success Rate</p>
+          <p style={{ fontSize: '0.7rem', color: 'var(--mv-slate)', textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>Success Rate</p>
           <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--mv-success)', margin: '8px 0 0 0' }}>
             {stats.totalActivities ? Math.round((stats.successfulLoginCount / stats.totalActivities) * 100) : 0}%
           </p>
@@ -187,28 +189,30 @@ export default function ActivityLog() {
 
       {/* Filters Section */}
       <div className="mv-card animate-fade-up" style={{ marginBottom: '1.5rem' }}>
-        <div className="mv-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p className="mv-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
-            <Filter size={18} />
-            Filters & Search
-          </p>
-          <button
-            onClick={() => {
-              fetchActivityLogs();
-              fetchActivityStats();
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors text-sm"
-            title="Refresh logs"
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </button>
+        <div className="mv-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <p className="mv-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+              <Filter size={18} />
+              Filters & Search
+            </p>
+            <button
+              onClick={() => {
+                fetchActivityLogs();
+                fetchActivityStats();
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors text-sm"
+              title="Refresh logs"
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+          </div>
         </div>
         <div className="mv-card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
             {/* Search Input */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--mv-border)', paddingLeft: '1rem' }}>
-              <Search size={18} className="text-slate-400" />
+            <div className="mv-search">
+              <span className="mv-search-icon"><Search size={15} /></span>
               <input
                 type="text"
                 placeholder="Search by user name..."
@@ -216,15 +220,6 @@ export default function ActivityLog() {
                 onChange={(e) => {
                   setSearchText(e.target.value);
                   setPage(1);
-                }}
-                style={{
-                  flex: 1,
-                  border: 'none',
-                  outline: 'none',
-                  padding: '0.75rem 1rem',
-                  fontSize: '0.875rem',
-                  backgroundColor: 'transparent',
-                  color: '#4b5563'
                 }}
               />
             </div>
@@ -242,8 +237,8 @@ export default function ActivityLog() {
                 border: '1px solid var(--mv-border)',
                 fontSize: '0.875rem',
                 cursor: 'pointer',
-                backgroundColor: 'white',
-                color: '#1f2937'
+                backgroundColor: 'var(--mv-off-white)',
+                color: 'var(--mv-slate-dark)'
               }}
             >
               <option value="all">All Actions</option>
@@ -272,8 +267,8 @@ export default function ActivityLog() {
                 border: '1px solid var(--mv-border)',
                 fontSize: '0.875rem',
                 cursor: 'pointer',
-                backgroundColor: 'white',
-                color: '#1f2937'
+                backgroundColor: 'var(--mv-off-white)',
+                color: 'var(--mv-slate-dark)'
               }}
             >
               <option value="all">All Roles</option>
@@ -297,8 +292,8 @@ export default function ActivityLog() {
                 border: '1px solid var(--mv-border)',
                 fontSize: '0.875rem',
                 cursor: 'pointer',
-                backgroundColor: 'white',
-                color: '#1f2937'
+                backgroundColor: 'var(--mv-off-white)',
+                color: 'var(--mv-slate-dark)'
               }}
             >
               <option value="all">All Status</option>
@@ -315,6 +310,7 @@ export default function ActivityLog() {
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '0.5rem',
               padding: '0.75rem 1rem',
               borderRadius: 'var(--radius-lg)',
@@ -325,7 +321,8 @@ export default function ActivityLog() {
               fontSize: '0.875rem',
               fontWeight: 600,
               opacity: exporting || activities.length === 0 ? 0.6 : 1,
-              transition: 'opacity 0.2s'
+              transition: 'opacity 0.2s',
+              width: '100%'
             }}
           >
             <Download size={16} />
@@ -346,33 +343,33 @@ export default function ActivityLog() {
         </div>
         <div className="mv-card-body" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', gap: '0.5rem', flexDirection: 'column' }}>
               <Loader size={20} className="animate-spin text-teal-600" />
-              <span style={{ color: '#667a8a' }}>Loading activities...</span>
+              <span style={{ color: 'var(--mv-slate)', fontSize: '0.875rem' }}>Loading activities...</span>
             </div>
           ) : activities.length > 0 ? (
             <>
-              {/* Table */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              {/* Table - Horizontal scroll on mobile */}
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', minWidth: 0 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--mv-border)' }}>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 120 }}>
                         Time
                       </th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 100 }}>
                         User
                       </th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 80 }}>
                         Role
                       </th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 110 }}>
                         Action
                       </th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 100 }}>
                         Resource
                       </th>
-                      <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#667a8a' }}>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--mv-slate)', minWidth: 80 }}>
                         Status
                       </th>
                     </tr>
@@ -383,33 +380,33 @@ export default function ActivityLog() {
                         borderBottom: '1px solid var(--mv-border)',
                         backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(45, 212, 191, 0.02)'
                       }}>
-                        <td style={{ padding: '1rem', fontSize: '0.85rem', color: '#4b5563', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--mv-slate-dark)', fontWeight: 500, whiteSpace: 'nowrap', minWidth: 120 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <span>{formatTime(activity.timestamp)}</span>
-                            <span style={{ fontSize: '0.75rem', color: '#667a8a' }}>{formatTimeRelative(activity.timestamp)}</span>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--mv-slate)' }}>{formatTimeRelative(activity.timestamp)}</span>
                           </div>
                         </td>
-                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#4b5563', fontWeight: 600 }}>
+                        <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--mv-slate-dark)', fontWeight: 600, minWidth: 100 }}>
                           {activity.userName}
                         </td>
-                        <td style={{ padding: '1rem' }}>
+                        <td style={{ padding: '0.75rem 0.5rem', minWidth: 80 }}>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(activity.userRole)}`}>
                             {activity.userRole}
                           </span>
                         </td>
-                        <td style={{ padding: '1rem' }}>
+                        <td style={{ padding: '0.75rem 0.5rem', minWidth: 110 }}>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getActionBadgeClass(activity.action)}`}>
                             {activity.action}
                           </span>
                         </td>
-                        <td style={{ padding: '1rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                        <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--mv-slate-dark)', minWidth: 100 }}>
                           {activity.resourceName || activity.resourceType || '-'}
                         </td>
-                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', minWidth: 80 }}>
                           <span style={{
-                            padding: '0.25rem 0.75rem',
+                            padding: '0.25rem 0.5rem',
                             borderRadius: '0.375rem',
-                            fontSize: '0.75rem',
+                            fontSize: '0.7rem',
                             fontWeight: 600,
                             backgroundColor: activity.status === 'SUCCESS' ? 'rgba(34, 197, 94, 0.1)' : 
                                            activity.status === 'FAILED' ? 'rgba(239, 68, 68, 0.1)' : 
@@ -429,31 +426,33 @@ export default function ActivityLog() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1.5rem', borderTop: '1px solid var(--mv-border)' }}>
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                  >
-                    Previous
-                  </button>
-                  <span style={{ fontSize: '0.875rem', color: '#667a8a', margin: '0 0.5rem' }}>
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-                  >
-                    Next
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', borderTop: '1px solid var(--mv-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                      className="px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    >
+                      Previous
+                    </button>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--mv-slate)', margin: '0 0.5rem' }}>
+                      Page {page} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page === totalPages}
+                      className="px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
             </>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
               <Activity size={40} className="text-slate-300 mb-3" />
-              <p style={{ color: '#667a8a', textAlign: 'center' }}>No activities found matching your filters</p>
+              <p style={{ color: 'var(--mv-slate)', textAlign: 'center', fontSize: '0.875rem' }}>No activities found matching your filters</p>
             </div>
           )}
         </div>

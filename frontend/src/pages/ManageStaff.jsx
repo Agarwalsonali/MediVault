@@ -151,12 +151,12 @@ export default function ManageStaff() {
             <div style={{ width: 34, height: 34, background: 'var(--mv-teal-pale)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Plus size={18} color="var(--mv-teal)" />
             </div>
-            <p className="mv-card-title">Create Staff Account</p>
+            <p className="mv-card-title" style={{ margin: 0 }}>Create Staff Account</p>
           </div>
         </div>
         <div className="mv-card-body">
           <form onSubmit={handleCreate}>
-            <div className="mv-form-row">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               {/* Full name */}
               <div className="mv-form-group">
                 <label className="mv-label" htmlFor="c-fullName">Full Name</label>
@@ -200,7 +200,8 @@ export default function ManageStaff() {
               <div className="mv-form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
                 <button type="submit"
                   className={`mv-btn mv-btn-primary mv-btn-full ${creating ? 'mv-btn-loading' : ''}`}
-                  disabled={creating}>
+                  disabled={creating}
+                  style={{ width: '100%' }}>
                   {creating ? <><span className="mv-spinner" /><span>Creating…</span></> : <><Plus size={16} /> Create Account</>}
                 </button>
               </div>
@@ -211,8 +212,8 @@ export default function ManageStaff() {
 
       {/* Staff list */}
       <div className="mv-card animate-fade-up" style={{ animationDelay: '120ms' }}>
-        <div className="mv-card-header" style={{ flexWrap: 'wrap', gap: '0.875rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="mv-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
             <div style={{ width: 34, height: 34, background: '#dbeafe', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Users size={18} color="#2563eb" />
             </div>
@@ -221,21 +222,21 @@ export default function ManageStaff() {
               <p style={{ fontSize: '0.78rem', color: 'var(--mv-slate)', marginTop: 1 }}>{staffList.length} total accounts</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginLeft: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', width: '100%' }}>
             {/* Search */}
-            <div className="mv-search" style={{ minWidth: 180 }}>
+            <div className="mv-search" style={{ gridColumn: 'auto / span auto' }}>
               <span className="mv-search-icon"><Search size={14} /></span>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or email…" />
             </div>
             {/* Role filter */}
-            <select className="mv-select" style={{ height: 38, width: 'auto', minWidth: 120 }}
+            <select className="mv-select" 
               value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
               <option value="All">All roles</option>
               {ROLES.map(r => <option key={r}>{r}</option>)}
             </select>
             {/* Refresh */}
             <button onClick={load} disabled={listLoading}
-              className="mv-btn mv-btn-ghost mv-btn-sm" style={{ gap: 6, padding: '0 12px' }}>
+              className="mv-btn mv-btn-ghost mv-btn-sm" style={{ gap: 6, width: '100%' }}>
               <RefreshCw size={14} className={listLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
@@ -300,42 +301,42 @@ export default function ManageStaff() {
               </table>
             </div>
 
-            <div className="sm:hidden" style={{ padding: '0.9rem' }}>
-              <div style={{ display: 'grid', gap: 10 }}>
+            <div className="sm:hidden" style={{ padding: '0.75rem 0.5rem' }}>
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
                 {paginated.map(s => {
                   const id  = s._id || s.id;
                   const ini = (s.fullName || '?').split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
                   const rs  = ROLE_STYLE[s.role] || { cls: 'mv-badge-gray', label: s.role };
 
                   return (
-                    <div key={id} className="mv-card" style={{ boxShadow: 'none' }}>
-                      <div className="mv-card-body" style={{ padding: '0.85rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,var(--mv-teal),var(--mv-teal-glow))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 600, color: 'white', flexShrink: 0 }}>{ini}</div>
-                          <div style={{ minWidth: 0 }}>
-                            <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--mv-slate-900)', margin: 0 }}>{s.fullName}</p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)', margin: 0, overflowWrap: 'anywhere' }}>{s.email}</p>
+                    <div key={id} className="mv-card" style={{ boxShadow: 'none', padding: 0 }}>
+                      <div className="mv-card-body" style={{ padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,var(--mv-teal),var(--mv-teal-glow))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'white', flexShrink: 0 }}>{ini}</div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--mv-slate-900)', margin: 0 }}>{s.fullName}</p>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--mv-slate)', margin: '2px 0 0 0', overflowWrap: 'anywhere' }}>{s.email}</p>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <span className={`mv-badge ${rs.cls}`}>{rs.label}</span>
-                          <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                          <span className={`mv-badge ${rs.cls}`} style={{ fontSize: '0.7rem' }}>{rs.label}</span>
+                          <div style={{ display: 'flex', gap: 4 }}>
                             <button
                               onClick={() => startEdit(s)}
                               className="mv-btn mv-btn-ghost mv-btn-sm"
-                              style={{ gap: 5, color: 'var(--mv-warning)', padding: '0 10px' }}
+                              style={{ gap: 4, color: 'var(--mv-warning)', padding: '0 8px', fontSize: '0.75rem' }}
                               title="Edit"
                             >
-                              <Edit2 size={13} /> Edit
+                              <Edit2 size={12} /> Edit
                             </button>
                             <button
                               onClick={() => handleDelete(s)}
                               className="mv-btn mv-btn-ghost mv-btn-sm"
-                              style={{ gap: 5, color: 'var(--mv-danger)', padding: '0 10px' }}
+                              style={{ gap: 4, color: 'var(--mv-danger)', padding: '0 8px', fontSize: '0.75rem' }}
                               title="Delete"
                             >
-                              <Trash2 size={13} /> Delete
+                              <Trash2 size={12} /> Delete
                             </button>
                           </div>
                         </div>
@@ -347,21 +348,21 @@ export default function ManageStaff() {
             </div>
 
             {/* Pagination */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ padding: '0.875rem 1.375rem', borderTop: '1px solid var(--mv-border)', gap: 10 }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--mv-slate)', textAlign: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center', justifyContent: 'center', padding: '0.875rem', borderTop: '1px solid var(--mv-border)' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--mv-slate)', textAlign: 'center', margin: 0 }}>
                 Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 10px' }}>
-                  <ChevronLeft size={15} />
+                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 8px' }}>
+                  <ChevronLeft size={14} />
                 </button>
-                <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--mv-slate-dark)', padding: '0 4px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--mv-slate-dark)', padding: '0 4px' }}>
                   {page} / {totalPages}
                 </span>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 10px' }}>
-                  <ChevronRight size={15} />
+                  className="mv-btn mv-btn-ghost mv-btn-sm" style={{ padding: '0 8px' }}>
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>
