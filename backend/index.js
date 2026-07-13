@@ -45,6 +45,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "https://medi-vault-amber.vercel.app/"
     ],
     credentials: true
   })
