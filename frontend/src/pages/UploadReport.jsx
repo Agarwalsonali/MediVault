@@ -116,7 +116,7 @@ export default function UploadReport() {
 
     try {
       const token = localStorage.getItem('mrms_jwt');
-      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace(/\/+$/, '') + '/reports';
+      const apiUrl = (import.meta.env.VITE_API_URL).replace(/\/+$/, '') + '/reports';
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
