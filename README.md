@@ -296,7 +296,7 @@ CLIENT_URL=http://localhost:5173
 
 ---
 
-# Author
+## 👩‍💻 Author
 
 **Sonali Agarwal**
 
