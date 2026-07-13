@@ -45,6 +45,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "https://medivault-rhv4.onrender.com"
     ],
     credentials: true
   })
