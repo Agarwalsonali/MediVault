@@ -18,26 +18,44 @@ const createTransporter = () => {
 
 export const sendEmail = async (to, subject, text, html) => {
   try {
+    emailLogger.info("Starting email send process", { to, subject });
+    
     const transporter = createTransporter();
+    emailLogger.info("Transporter created successfully", { 
+      emailUser: process.env.EMAIL_USER,
+      emailPassConfigured: !!process.env.EMAIL_PASS 
+    });
     
     // Verify transporter configuration
+    emailLogger.info("Verifying transporter configuration...");
     await transporter.verify();
+    emailLogger.info("Transporter verification successful");
     
-    await transporter.sendMail({
+    emailLogger.info("Sending email...", { to, subject });
+    const info = await transporter.sendMail({
       from: `"MediVault" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
       html
     });
-    emailLogger.info("Email sent successfully", { to, subject });
+    
+    emailLogger.info("Email sent successfully", { 
+      to, 
+      subject,
+      messageId: info.messageId,
+      response: info.response 
+    });
   } catch (error) {
     emailLogger.error("Email send failed", { 
       to, 
       subject, 
       error: error.message, 
       stack: error.stack,
-      emailConfigured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS)
+      emailConfigured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+      emailUser: process.env.EMAIL_USER,
+      errorName: error.name,
+      errorCode: error.code
     });
     throw error;
   }

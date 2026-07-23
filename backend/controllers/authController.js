@@ -477,17 +477,19 @@ export const createStaffAccount = async (req, res) => {
       emailOtpExpires: null
     });
 
+    authLogger.info("Staff account created, sending invite email", { email, inviteLink });
+
     // Send invite email in background - don't block response
-    let emailSent = false;
     sendInviteEmail(email, inviteLink)
       .then(() => {
-        emailSent = true;
         authLogger.info("Staff invite email sent successfully", { email });
       })
       .catch((emailError) => {
         authLogger.error("Failed to send staff invite email", { 
           email, 
           error: emailError.message,
+          errorName: emailError.name,
+          errorCode: emailError.code,
           inviteLink 
         });
       });
