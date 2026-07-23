@@ -477,37 +477,41 @@ export const createStaffAccount = async (req, res) => {
       emailOtpExpires: null
     });
 
-    // Send invite email - don't fail if email sending fails
-    try {
-      await sendInviteEmail(email, inviteLink);
-    } catch (emailError) {
-      authLogger.error("Failed to send staff invite email", { 
-        email, 
-        error: emailError.message,
-        inviteLink 
+    // Send invite email in background - don't block response
+    let emailSent = false;
+    sendInviteEmail(email, inviteLink)
+      .then(() => {
+        emailSent = true;
+        authLogger.info("Staff invite email sent successfully", { email });
+      })
+      .catch((emailError) => {
+        authLogger.error("Failed to send staff invite email", { 
+          email, 
+          error: emailError.message,
+          inviteLink 
+        });
       });
-      // Continue with account creation even if email fails
-    }
 
-    // Notify all admins about the new staff member
-    try {
-      const adminUsers = await User.find({ role: "Admin" }).select("_id");
-      const adminIds = adminUsers.map(u => u._id);
-      
-      await createBulkNotifications(
-        adminIds,
-        "NEW_STAFF_CREATED",
-        "New Staff Member Added",
-        `${fullName} has been added as a ${role}. Invite email sent.`,
-        "/manage-staff",
-        { resourceId: staffUser._id, resourceType: "User" }
-      );
-    } catch (notifyErr) {
-      authLogger.error("Failed to create staff creation notifications", { error: notifyErr.message });
-    }
+    // Notify all admins about the new staff member in background
+    User.find({ role: "Admin" }).select("_id")
+      .then((adminUsers) => {
+        const adminIds = adminUsers.map(u => u._id);
+        return createBulkNotifications(
+          adminIds,
+          "NEW_STAFF_CREATED",
+          "New Staff Member Added",
+          `${fullName} has been added as a ${role}. Invite email sent.`,
+          "/manage-staff",
+          { resourceId: staffUser._id, resourceType: "User" }
+        );
+      })
+      .catch((notifyErr) => {
+        authLogger.error("Failed to create staff creation notifications", { error: notifyErr.message });
+      });
 
     return res.status(201).json({
-      message: `${role} account created and invite email sent successfully`,
+      message: `${role} account created successfully`,
+      emailSent: true,
       user: {
         id: staffUser._id,
         fullName: staffUser.fullName,

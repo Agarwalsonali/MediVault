@@ -2,18 +2,27 @@ import nodemailer from 'nodemailer'
 import { createFeatureLogger } from './logger.js';
 const emailLogger = createFeatureLogger('email');
 
-const createTransporter = () =>
-  nodemailer.createTransport({
+const createTransporter = () => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('EMAIL_USER and EMAIL_PASS environment variables are required for email sending');
+  }
+  
+  return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     }
   });
+};
 
 export const sendEmail = async (to, subject, text, html) => {
   try {
     const transporter = createTransporter();
+    
+    // Verify transporter configuration
+    await transporter.verify();
+    
     await transporter.sendMail({
       from: `"MediVault" <${process.env.EMAIL_USER}>`,
       to,
@@ -23,7 +32,13 @@ export const sendEmail = async (to, subject, text, html) => {
     });
     emailLogger.info("Email sent successfully", { to, subject });
   } catch (error) {
-    emailLogger.error("Email send failed", { to, subject, error: error.message, stack: error.stack });
+    emailLogger.error("Email send failed", { 
+      to, 
+      subject, 
+      error: error.message, 
+      stack: error.stack,
+      emailConfigured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS)
+    });
     throw error;
   }
 };
