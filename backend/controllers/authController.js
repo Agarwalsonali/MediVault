@@ -477,7 +477,17 @@ export const createStaffAccount = async (req, res) => {
       emailOtpExpires: null
     });
 
-    await sendInviteEmail(email, inviteLink);
+    // Send invite email - don't fail if email sending fails
+    try {
+      await sendInviteEmail(email, inviteLink);
+    } catch (emailError) {
+      authLogger.error("Failed to send staff invite email", { 
+        email, 
+        error: emailError.message,
+        inviteLink 
+      });
+      // Continue with account creation even if email fails
+    }
 
     // Notify all admins about the new staff member
     try {

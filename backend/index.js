@@ -19,9 +19,32 @@ import { requestLogger } from "./middleware/requestLogger.js";
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'PORT',
+  'MONGO_URL', 
+  'JWT_SECRET',
+  'FRONTEND_URL',
+  'EMAIL_USER',
+  'EMAIL_PASS'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error("❌ FATAL: Missing required environment variables:");
+  missingEnvVars.forEach(varName => {
+    console.error(`   - ${varName}`);
+  });
+  console.error("\nPlease set these environment variables before starting the server.");
+  console.error("Create a .env file in the backend directory with these variables.");
+  process.exit(1);
+}
+
 console.log("Starting backend server...");
 console.log("PORT:", process.env.PORT);
 console.log("MONGO_URL:", process.env.MONGO_URL ? "configured" : "NOT SET");
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL ? "configured" : "NOT SET");
 
 // Add simple error handlers
 process.on("uncaughtException", (err) => {
