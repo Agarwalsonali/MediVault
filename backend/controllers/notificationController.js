@@ -1,5 +1,11 @@
 import Notification from "../models/notification.js";
 import logger from "../utils/logger.js";
+import mongoose from "mongoose";
+
+// Check if MongoDB is connected
+const isDbConnected = () => {
+  return mongoose.connection.readyState === 1;
+};
 
 /**
  * Get notifications for the current user
@@ -98,12 +104,32 @@ export const markAsRead = async (req, res) => {
 
 /**
  * Mark all notifications as read
- * @route PATCH /api/notifications/mark-all-read
+ * @route PATCH /api/notifications/mark-all-as-read
  */
 export const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    logger.info(`markAllAsRead called - userId: ${userId}, dbConnected: ${isDbConnected()}`);
+    
+    if (!userId) {
+      logger.error("User ID not found in request");
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
 
+    // Check database connection
+    if (!isDbConnected()) {
+      logger.error("Database not connected when trying to mark all notifications as read");
+      return res.status(503).json({ success: false, message: "Database not connected" });
+    }
+
+    logger.info(`Attempting to mark all notifications as read for user: ${userId}`);
+
+    // First, find the unread notifications to see if they exist
+    const unreadNotifications = await Notification.find({ recipientId: userId, isRead: false });
+    logger.info(`Found ${unreadNotifications.length} unread notifications for user: ${userId}`);
+
+    // Then update them
     const result = await Notification.updateMany(
       { recipientId: userId, isRead: false },
       { isRead: true }
@@ -112,11 +138,24 @@ export const markAllAsRead = async (req, res) => {
     logger.info(`Marked ${result.modifiedCount} notifications as read for user: ${userId}`);
     res.json({
       success: true,
-      message: `Marked ${result.modifiedCount} notifications as read`
+      message: `Marked ${result.modifiedCount} notifications as read`,
+      modifiedCount: result.modifiedCount
     });
   } catch (err) {
-    logger.error(`Error marking all notifications as read: ${err.message}`);
-    res.status(500).json({ success: false, message: "Failed to update notifications" });
+    logger.error(`Error marking all notifications as read: ${err.message}`, { 
+      stack: err.stack,
+      userId: req.user?.id,
+      errorName: err.name,
+      errorMessage: err.message,
+      dbConnected: isDbConnected()
+    });
+    
+    // Return more detailed error information for debugging
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update notifications",
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 

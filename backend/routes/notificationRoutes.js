@@ -27,16 +27,16 @@ router.get("/", getNotifications);
 router.get("/unread/count", getUnreadCount);
 
 /**
+ * PATCH /api/notifications/mark-all-as-read
+ * Mark all unread notifications as read
+ */
+router.patch("/mark-all-as-read", markAllAsRead);
+
+/**
  * PATCH /api/notifications/:id/read
  * Mark a specific notification as read
  */
 router.patch("/:id/read", markAsRead);
-
-/**
- * PATCH /api/notifications/mark-all-read
- * Mark all unread notifications as read
- */
-router.patch("/mark-all/read", markAllAsRead);
 
 /**
  * DELETE /api/notifications/:id
