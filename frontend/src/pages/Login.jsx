@@ -113,12 +113,12 @@ export default function Login() {
               padding: '0.875rem 1rem', 
               marginBottom: '1rem', 
               borderRadius: 'var(--radius-lg)', 
-              backgroundColor: '#fef3c7', 
-              border: '1px solid #fcd34d',
+              backgroundColor: 'var(--mv-warning-bg)', 
+              border: '1px solid var(--mv-warning)',
               animation: 'fadeIn 0.3s ease-in'
             }}>
-              <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: '0.125rem' }} />
-              <p style={{ fontSize: '0.875rem', color: '#92400e', margin: 0, lineHeight: 1.5 }}>{sessionMessage}</p>
+              <AlertCircle size={18} style={{ color: 'var(--mv-warning)', flexShrink: 0, marginTop: '0.125rem' }} />
+              <p style={{ fontSize: '0.875rem', color: 'var(--mv-slate-900)', margin: 0, lineHeight: 1.5 }}>{sessionMessage}</p>
             </div>
           )}
 
