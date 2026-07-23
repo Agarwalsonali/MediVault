@@ -62,6 +62,15 @@ const PORT = process.env.PORT;
 
 console.log("Express app created, setting up middleware...");
 
+// Add request timeout middleware
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    logger.warn('Request timeout', { method: req.method, url: req.originalUrl });
+    res.status(504).json({ message: 'Request timeout' });
+  });
+  next();
+});
+
 app.use(express.json());
 app.use(requestLogger);
 app.use(
@@ -120,6 +129,17 @@ app.use((err, req, res, next) => {
   }
 
   return res.status(500).json({ message: "Internal Server Error" });
+});
+
+// Handle server shutdown gracefully
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  process.exit(0);
 });
 
 console.log("All routes mounted, starting server...");

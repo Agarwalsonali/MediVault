@@ -454,11 +454,7 @@ export const createStaffAccount = async (req, res) => {
     const inviteToken = crypto.randomBytes(32).toString("hex");
     const inviteTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    const frontendBaseUrl = process.env.FRONTEND_URL?.trim();
-    if (!frontendBaseUrl) {
-      return res.status(500).json({ message: "FRONTEND_URL is not configured on server" });
-    }
-
+    const frontendBaseUrl = process.env.FRONTEND_URL?.trim() || "https://medi-vault-amber.vercel.app";
     const inviteLink = `${frontendBaseUrl.replace(/\/+$/, "")}/set-password?token=${inviteToken}`;
     if (String(process.env.LOG_INVITE_LINK || "false").toLowerCase() === "true") {
       authLogger.info("Staff invite link generated", { email, inviteLink });

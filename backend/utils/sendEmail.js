@@ -12,6 +12,15 @@ const createTransporter = () => {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
+    },
+    // Add connection settings for better cloud compatibility
+    pool: true,
+    maxConnections: 1,
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000, // 30 seconds
+    socketTimeout: 30000, // 30 seconds
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates
     }
   });
 };

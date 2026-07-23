@@ -16,24 +16,34 @@ export const getNotifications = async (req, res) => {
     const { limit = 10, offset = 0, unreadOnly = false } = req.query;
     const userId = req.user.id;
 
+    // Check database connection
+    if (!isDbConnected()) {
+      logger.error("Database not connected when fetching notifications");
+      return res.status(503).json({ success: false, message: "Database not connected" });
+    }
+
     const query = { recipientId: userId };
     if (unreadOnly === "true") {
       query.isRead = false;
     }
 
+    logger.info(`Fetching notifications for user: ${userId}`, { limit, offset, unreadOnly });
+
+    // Add timeout to database queries
     const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
       .skip(parseInt(offset))
       .limit(parseInt(limit))
-      .lean();
+      .lean()
+      .maxTimeMS(5000); // 5 second timeout
 
-    const total = await Notification.countDocuments(query);
+    const total = await Notification.countDocuments(query).maxTimeMS(5000);
     const unreadCount = await Notification.countDocuments({
       recipientId: userId,
       isRead: false
-    });
+    }).maxTimeMS(5000);
 
-    logger.info(`Retrieved notifications for user: ${userId}`);
+    logger.info(`Retrieved notifications for user: ${userId}`, { count: notifications.length, total, unreadCount });
     res.json({
       success: true,
       data: notifications,
@@ -45,7 +55,11 @@ export const getNotifications = async (req, res) => {
       }
     });
   } catch (err) {
-    logger.error(`Error fetching notifications: ${err.message}`);
+    logger.error(`Error fetching notifications: ${err.message}`, { 
+      stack: err.stack,
+      userId: req.user?.id,
+      errorName: err.name 
+    });
     res.status(500).json({ success: false, message: "Failed to fetch notifications" });
   }
 };
@@ -57,17 +71,27 @@ export const getNotifications = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user.id;
+    
+    // Check database connection
+    if (!isDbConnected()) {
+      logger.error("Database not connected when fetching unread count");
+      return res.status(503).json({ success: false, message: "Database not connected" });
+    }
+
     const unreadCount = await Notification.countDocuments({
       recipientId: userId,
       isRead: false
-    });
+    }).maxTimeMS(5000);
 
     res.json({
       success: true,
       unreadCount
     });
   } catch (err) {
-    logger.error(`Error fetching unread count: ${err.message}`);
+    logger.error(`Error fetching unread count: ${err.message}`, { 
+      stack: err.stack,
+      userId: req.user?.id 
+    });
     res.status(500).json({ success: false, message: "Failed to fetch unread count" });
   }
 };
