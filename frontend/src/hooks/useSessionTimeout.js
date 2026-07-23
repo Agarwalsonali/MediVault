@@ -29,6 +29,19 @@ export const useSessionTimeout = (timeoutMinutes = 30) => {
     let warningTimeoutId;
     let activityCheckInterval;
 
+    const handleLogout = () => {
+      console.log(`Session expired due to ${timeoutMinutes} minutes of inactivity`);
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      clearStoredUserData();
+      window.dispatchEvent(new Event('auth-changed'));
+      navigate('/login', { 
+        state: { 
+          message: `Your session has expired due to ${timeoutMinutes === 2880 ? '2 days' : `${timeoutMinutes} minutes`} of inactivity. Please login again.`,
+          sessionExpired: true 
+        } 
+      });
+    };
+
     // Check if session has already expired
     const checkSessionValidity = () => {
       const lastActivityStr = localStorage.getItem(LAST_ACTIVITY_KEY);
@@ -70,19 +83,6 @@ export const useSessionTimeout = (timeoutMinutes = 30) => {
       timeoutId = setTimeout(() => {
         handleLogout();
       }, timeoutMs);
-    };
-
-    const handleLogout = () => {
-      console.log(`Session expired due to ${timeoutMinutes} minutes of inactivity`);
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
-      clearStoredUserData();
-      window.dispatchEvent(new Event('auth-changed'));
-      navigate('/login', { 
-        state: { 
-          message: `Your session has expired due to ${timeoutMinutes === 2880 ? '2 days' : `${timeoutMinutes} minutes`} of inactivity. Please login again.`,
-          sessionExpired: true 
-        } 
-      });
     };
 
     // List of events to track activity
