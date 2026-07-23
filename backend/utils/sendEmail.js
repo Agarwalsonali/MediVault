@@ -3,8 +3,22 @@ import { createFeatureLogger } from './logger.js';
 const emailLogger = createFeatureLogger('email');
 
 const createTransporter = () => {
+  // Use Resend for cloud-native email sending (recommended for Render)
+  if (process.env.RESEND_API_KEY) {
+    return nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'resend',
+        pass: process.env.RESEND_API_KEY
+      }
+    });
+  }
+  
+  // Fallback to Gmail (not recommended for cloud platforms)
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('EMAIL_USER and EMAIL_PASS environment variables are required for email sending');
+    throw new Error('Either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS environment variables are required for email sending');
   }
   
   return nodemailer.createTransport({
