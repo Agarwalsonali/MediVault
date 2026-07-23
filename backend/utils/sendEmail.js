@@ -8,11 +8,15 @@ const createTransporter = () => {
   }
   
   return nodemailer.createTransport({
-    service: "gmail",
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
+    // Force IPv4 to avoid IPv6 connectivity issues on Render
+    family: 4,
     // Add connection settings for better cloud compatibility
     pool: true,
     maxConnections: 1,
