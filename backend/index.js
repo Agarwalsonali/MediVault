@@ -86,7 +86,9 @@ app.use(
       "http://localhost:5173",
       "https://medi-vault-amber.vercel.app"
     ],
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
 
