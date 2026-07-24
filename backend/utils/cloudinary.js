@@ -1,10 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
-import dotenv from 'dotenv';
 import { createFeatureLogger } from './logger.js';
 const configLogger = createFeatureLogger('config');
-
-// Load environment variables in this module
-dotenv.config();
 
 // Validate required environment variables
 const requiredEnvVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];

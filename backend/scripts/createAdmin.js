@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import User from "../models/user.js";
 import { adminLogger } from "../utils/logger.js";
 
+// Load environment variables for standalone script execution
 dotenv.config();
 
 const requiredEnv = ["MONGO_URL", "ADMIN_FULL_NAME", "ADMIN_EMAIL", "ADMIN_PASSWORD"];

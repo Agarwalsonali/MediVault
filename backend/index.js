@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import { sendEmail } from "./utils/sendEmail.js";
+import { sendEmail, verifyEmailConnection } from "./utils/sendEmail.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -29,13 +29,22 @@ const requiredEnvVars = [
 
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-// Email configuration: either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS
-const hasResendKey = !!process.env.RESEND_API_KEY;
-const hasGmailConfig = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+// Email configuration validation
+const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+const hasEmailConfig = 
+  (emailProvider === 'resend' && process.env.RESEND_API_KEY) ||
+  (emailProvider === 'brevo' && process.env.BREVO_API_KEY) ||
+  (emailProvider === 'gmail' && process.env.EMAIL_USER && process.env.EMAIL_PASS) ||
+  (emailProvider === 'custom' && process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS);
 
-if (!hasResendKey && !hasGmailConfig) {
-  missingEnvVars.push('EMAIL_USER', 'EMAIL_PASS');
-  console.error("❌ FATAL: Email configuration missing. Set either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS");
+if (!hasEmailConfig) {
+  console.error(`❌ FATAL: Email configuration missing for provider '${emailProvider}'`);
+  console.error(`Required variables for ${emailProvider}:`);
+  if (emailProvider === 'resend') console.error('   - RESEND_API_KEY');
+  else if (emailProvider === 'brevo') console.error('   - BREVO_API_KEY');
+  else if (emailProvider === 'gmail') console.error('   - EMAIL_USER, EMAIL_PASS');
+  else if (emailProvider === 'custom') console.error('   - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS');
+  process.exit(1);
 }
 
 if (missingEnvVars.length > 0) {
@@ -115,6 +124,18 @@ mongoose.connect(process.env.MONGO_URL, {
     console.error("MongoDB connection failed:", err.message);
     logger.error("MongoDB connection failed", { error: err.message, stack: err.stack });
     // Don't exit, let the app run in case DB comes back online
+  });
+
+// Verify email connection at startup
+verifyEmailConnection()
+  .then(() => {
+    console.log("Email service verified successfully");
+    logger.info("Email service verified successfully");
+  })
+  .catch((err) => {
+    console.error("Email service verification failed:", err.message);
+    logger.error("Email service verification failed", { error: err.message, stack: err.stack });
+    // Don't exit, let the app run - email will retry on send
   });
 
 //sendEmail("agarwalsonali922@gmail.com", "Test Email", "Hello OTP Test");

@@ -1,10 +1,41 @@
-import nodemailer from 'nodemailer'
+import nodemailer from 'nodemailer';
 import { createFeatureLogger } from './logger.js';
+
 const emailLogger = createFeatureLogger('email');
 
+// Singleton transporter instance
+let transporter = null;
+let transporterVerified = false;
+
+/**
+ * Network error codes that should trigger retry
+ */
+const RETRYABLE_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN'];
+
+/**
+ * Sleep utility for retry backoff
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Creates and configures SMTP transporter based on environment variables
+ * Supports: Resend, Gmail, Brevo, and custom SMTP
+ * @returns {Object} Nodemailer transporter instance
+ * @throws {Error} If email configuration is invalid
+ */
 const createTransporter = () => {
-  // Use Resend for cloud-native email sending (recommended for Render)
-  if (process.env.RESEND_API_KEY) {
+  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+  
+  emailLogger.info('Creating email transporter', { emailProvider });
+  
+  // Resend (recommended for cloud platforms like Render)
+  if (emailProvider === 'resend') {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('EMAIL_PROVIDER=resend requires RESEND_API_KEY environment variable');
+    }
+    
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 587,
@@ -12,80 +43,226 @@ const createTransporter = () => {
       auth: {
         user: 'resend',
         pass: process.env.RESEND_API_KEY
+      },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000
+    });
+  }
+  
+  // Brevo (formerly Sendinblue) - recommended production SMTP
+  if (emailProvider === 'brevo') {
+    if (!process.env.BREVO_API_KEY) {
+      throw new Error('EMAIL_PROVIDER=brevo requires BREVO_API_KEY environment variable');
+    }
+    
+    return nodemailer.createTransport({
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.BREVO_API_KEY,
+        pass: process.env.BREVO_SMTP_KEY || process.env.BREVO_API_KEY
+      },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000
+    });
+  }
+  
+  // Custom SMTP configuration
+  if (emailProvider === 'custom') {
+    const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS'];
+    const missing = requiredVars.filter(v => !process.env[v]);
+    if (missing.length > 0) {
+      throw new Error(`EMAIL_PROVIDER=custom requires: ${missing.join(', ')}`);
+    }
+    
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT, 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000
+    });
+  }
+  
+  // Gmail (legacy, not recommended for production)
+  if (emailProvider === 'gmail') {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('EMAIL_PROVIDER=gmail requires EMAIL_USER and EMAIL_PASS environment variables');
+    }
+    
+    emailLogger.warn('Using Gmail SMTP - not recommended for production. Consider using Brevo or Resend.');
+    
+    return nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      // Force IPv4 to avoid IPv6 connectivity issues on cloud platforms
+      family: 4,
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 50,
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }
   
-  // Fallback to Gmail (not recommended for cloud platforms)
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS environment variables are required for email sending');
-  }
-  
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    // Force IPv4 to avoid IPv6 connectivity issues on Render
-    family: 4,
-    // Add connection settings for better cloud compatibility
-    pool: true,
-    maxConnections: 1,
-    connectionTimeout: 60000, // 60 seconds
-    greetingTimeout: 30000, // 30 seconds
-    socketTimeout: 30000, // 30 seconds
-    tls: {
-      rejectUnauthorized: false // Allow self-signed certificates
-    }
-  });
+  throw new Error(`Unsupported EMAIL_PROVIDER: ${emailProvider}. Supported: resend, brevo, gmail, custom`);
 };
 
-export const sendEmail = async (to, subject, text, html) => {
+/**
+ * Gets or creates the singleton transporter instance
+ * @returns {Object} Nodemailer transporter instance
+ */
+const getTransporter = () => {
+  if (!transporter) {
+    transporter = createTransporter();
+    emailLogger.info('Singleton transporter created');
+  }
+  return transporter;
+};
+
+/**
+ * Verifies the transporter connection (called once at startup)
+ * @returns {Promise<void>}
+ */
+export const verifyEmailConnection = async () => {
   try {
-    emailLogger.info("Starting email send process", { to, subject });
-    
-    const transporter = createTransporter();
-    emailLogger.info("Transporter created successfully", { 
-      emailUser: process.env.EMAIL_USER,
-      emailPassConfigured: !!process.env.EMAIL_PASS 
-    });
-    
-    // Verify transporter configuration
-    emailLogger.info("Verifying transporter configuration...");
-    await transporter.verify();
-    emailLogger.info("Transporter verification successful");
-    
-    emailLogger.info("Sending email...", { to, subject });
-    const info = await transporter.sendMail({
-      from: `"MediVault" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html
-    });
-    
-    emailLogger.info("Email sent successfully", { 
-      to, 
-      subject,
-      messageId: info.messageId,
-      response: info.response 
-    });
+    const trans = getTransporter();
+    emailLogger.info('Verifying email transporter connection...');
+    await trans.verify();
+    transporterVerified = true;
+    emailLogger.info('Email transporter verified successfully');
   } catch (error) {
-    emailLogger.error("Email send failed", { 
-      to, 
-      subject, 
-      error: error.message, 
-      stack: error.stack,
-      emailConfigured: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
-      emailUser: process.env.EMAIL_USER,
-      errorName: error.name,
-      errorCode: error.code
+    emailLogger.error('Email transporter verification failed', {
+      error: error.message,
+      code: error.code,
+      stack: error.stack
     });
     throw error;
   }
+};
+
+/**
+ * Sends an email with retry logic for network errors
+ * @param {Object} params - Email parameters
+ * @param {string} params.to - Recipient email address
+ * @param {string} params.subject - Email subject
+ * @param {string} params.text - Plain text version
+ * @param {string} params.html - HTML version
+ * @param {number} params.maxRetries - Maximum retry attempts (default: 3)
+ * @returns {Promise<Object>} Nodemailer send result
+ * @throws {Error} If email fails after all retries
+ */
+export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => {
+  const trans = getTransporter();
+  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+  let lastError = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      emailLogger.info('Sending email', { 
+        to, 
+        subject, 
+        attempt: attempt + 1,
+        maxRetries: maxRetries + 1,
+        emailProvider 
+      });
+      
+      const fromAddress = emailProvider === 'gmail' 
+        ? process.env.EMAIL_USER 
+        : process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@medivault.com';
+      
+      const info = await trans.sendMail({
+        from: `"MediVault" <${fromAddress}>`,
+        to,
+        subject,
+        text,
+        html
+      });
+      
+      emailLogger.info('Email sent successfully', { 
+        to, 
+        subject,
+        messageId: info.messageId,
+        response: info.response,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        attempt: attempt + 1
+      });
+      
+      return info;
+      
+    } catch (error) {
+      lastError = error;
+      
+      emailLogger.error('Email send attempt failed', {
+        to,
+        subject,
+        attempt: attempt + 1,
+        error: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        responseCode: error.responseCode,
+        stack: error.stack
+      });
+      
+      // Check if error is retryable
+      const isRetryable = RETRYABLE_ERROR_CODES.includes(error.code) || 
+                         error.code === 'ETIMEDOUT' ||
+                         error.code === 'ECONNRESET';
+      
+      // Don't retry if this was the last attempt or error is not retryable
+      if (attempt >= maxRetries || !isRetryable) {
+        emailLogger.error('Email send failed - no more retries or non-retryable error', {
+          to,
+          subject,
+          totalAttempts: attempt + 1,
+          isRetryable,
+          finalError: error.message,
+          errorCode: error.code
+        });
+        throw new Error(`Failed to send email after ${attempt + 1} attempts: ${error.message}`);
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s, 8s...
+      const backoffMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+      emailLogger.info(`Retrying email send after ${backoffMs}ms backoff`, {
+        to,
+        attempt: attempt + 1,
+        nextAttempt: attempt + 2
+      });
+      await sleep(backoffMs);
+    }
+  }
+  
+  // This should never be reached, but just in case
+  throw lastError || new Error('Unknown error sending email');
 };
 
 /* ─────────────────────────────────────────
@@ -246,6 +423,12 @@ function otpDigitBoxes(otp) {
 /* ─────────────────────────────────────────
    1. EMAIL VERIFICATION OTP
 ───────────────────────────────────────── */
+/**
+ * Sends email verification OTP
+ * @param {string} email - Recipient email address
+ * @param {string} otp - 6-digit verification code
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendVerificationOtpEmail = async (email, otp) => {
   const subject = "Verify your MediVault account";
   const text = `Your MediVault email verification code is: ${otp}\n\nThis code expires in 10 minutes. Do not share it with anyone.`;
@@ -284,12 +467,18 @@ export const sendVerificationOtpEmail = async (email, otp) => {
     `
   });
 
-  return sendEmail(email, subject, text, html);
+  return sendEmail({ to: email, subject, text, html });
 };
 
 /* ─────────────────────────────────────────
    2. LOGIN OTP
 ───────────────────────────────────────── */
+/**
+ * Sends login OTP
+ * @param {string} email - Recipient email address
+ * @param {string} otp - 6-digit login code
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendLoginOtpEmail = async (email, otp) => {
   const subject = "Your MediVault login code";
   const text = `Your MediVault login code is: ${otp}\n\nThis code expires in 5 minutes. Do not share it with anyone.`;
@@ -324,12 +513,18 @@ export const sendLoginOtpEmail = async (email, otp) => {
     `
   });
 
-  return sendEmail(email, subject, text, html);
+  return sendEmail({ to: email, subject, text, html });
 };
 
 /* ─────────────────────────────────────────
    3. PASSWORD RESET OTP
 ───────────────────────────────────────── */
+/**
+ * Sends password reset OTP
+ * @param {string} email - Recipient email address
+ * @param {string} otp - 6-digit reset code
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendPasswordResetOtpEmail = async (email, otp) => {
   const subject = "Reset your MediVault password";
   const text = `Your MediVault password reset code is: ${otp}\n\nThis code expires in 5 minutes.`;
@@ -359,12 +554,19 @@ export const sendPasswordResetOtpEmail = async (email, otp) => {
     `
   });
 
-  return sendEmail(email, subject, text, html);
+  return sendEmail({ to: email, subject, text, html });
 };
 
 /* ─────────────────────────────────────────
    4. STAFF INVITE EMAIL
 ───────────────────────────────────────── */
+/**
+ * Sends staff invitation email
+ * @param {string} email - Recipient email address
+ * @param {string} link - Invitation link
+ * @param {string} role - Staff role (Doctor, Nurse, Staff, Admin)
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendInviteEmail = async (email, link, role = 'Staff') => {
   const subject = `You've been invited to join MediVault as ${role}`;
   const text = `Welcome to MediVault. You've been invited as ${role}.\n\nSet your password using this link:\n${link}\n\nThis link expires in 24 hours.`;
@@ -465,7 +667,7 @@ export const sendInviteEmail = async (email, link, role = 'Staff') => {
     `
   });
 
-  return sendEmail(email, subject, text, html);
+  return sendEmail({ to: email, subject, text, html });
 };
 
 /* ─────────────────────────────────────────
@@ -479,6 +681,18 @@ const escapeHtml = (value = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+/**
+ * Sends support request notification to admin
+ * @param {Object} params - Support request details
+ * @param {string} params.to - Admin email address
+ * @param {string} params.name - User name
+ * @param {string} params.email - User email
+ * @param {string} params.role - User role
+ * @param {string} params.issueType - Type of issue
+ * @param {string} params.message - Support message
+ * @param {string} params.submittedAt - Submission timestamp
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendSupportRequestNotificationEmail = async ({
   to,
   name,
@@ -542,7 +756,7 @@ export const sendSupportRequestNotificationEmail = async ({
     `,
   });
 
-  return sendEmail(to, subject, text, html);
+  return sendEmail({ to, subject, text, html });
 };
 
 /* ─────────────────────────────────────────
@@ -550,6 +764,12 @@ export const sendSupportRequestNotificationEmail = async ({
    Sent when multiple failed login attempts
    are detected and account is locked
 ───────────────────────────────────────── */
+/**
+ * Sends security alert email for account lockout
+ * @param {string} email - Recipient email address
+ * @param {string} fullName - User's full name
+ * @returns {Promise<Object>} Nodemailer send result
+ */
 export const sendSecurityAlertEmail = async (email, fullName = "User") => {
   const subject = "Security Alert - MediVault";
   const text = `Hi ${fullName},\n\nWe detected multiple failed login attempts on your MediVault account. For your security, your account has been temporarily locked for 15 minutes.\n\nIf this wasn't you, please reset your password immediately.\n\nBest regards,\nMediVault Security Team`;
@@ -632,5 +852,5 @@ export const sendSecurityAlertEmail = async (email, fullName = "User") => {
     `
   });
 
-  return sendEmail(email, subject, text, html);
+  return sendEmail({ to: email, subject, text, html });
 };
