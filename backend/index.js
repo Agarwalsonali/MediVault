@@ -24,12 +24,19 @@ const requiredEnvVars = [
   'PORT',
   'MONGO_URL', 
   'JWT_SECRET',
-  'FRONTEND_URL',
-  'EMAIL_USER',
-  'EMAIL_PASS'
+  'FRONTEND_URL'
 ];
 
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+// Email configuration: either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS
+const hasResendKey = !!process.env.RESEND_API_KEY;
+const hasGmailConfig = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+
+if (!hasResendKey && !hasGmailConfig) {
+  missingEnvVars.push('EMAIL_USER', 'EMAIL_PASS');
+  console.error("❌ FATAL: Email configuration missing. Set either RESEND_API_KEY or EMAIL_USER/EMAIL_PASS");
+}
 
 if (missingEnvVars.length > 0) {
   console.error("❌ FATAL: Missing required environment variables:");
