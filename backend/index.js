@@ -69,17 +69,7 @@ const PORT = process.env.PORT;
 
 console.log("Express app created, setting up middleware...");
 
-// Add request timeout middleware
-app.use((req, res, next) => {
-  res.setTimeout(30000, () => {
-    logger.warn('Request timeout', { method: req.method, url: req.originalUrl });
-    res.status(504).json({ message: 'Request timeout' });
-  });
-  next();
-});
-
-app.use(express.json());
-app.use(requestLogger);
+// CORS must be first to handle preflight requests
 app.use(
   cors({
     origin: [
@@ -91,6 +81,23 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Add request timeout middleware
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    logger.warn('Request timeout', { method: req.method, url: req.originalUrl });
+    res.status(504).json({ message: 'Request timeout' });
+  });
+  next();
+});
+
+app.use(express.json());
+app.use(requestLogger);
 
 // Serve static files for uploads
 app.use("/uploads", express.static("uploads"));
