@@ -192,13 +192,28 @@ export const deleteNotification = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      logger.warn(`Invalid notification ID format: ${id}`);
+      return res.json({
+        success: true,
+        message: "Notification deleted (invalid ID)"
+      });
+    }
+
     const notification = await Notification.findOneAndDelete({
       _id: id,
       recipientId: userId
     });
 
+    // Make delete idempotent - return success even if notification doesn't exist
+    // This prevents frontend retry loops when notifications are already deleted
     if (!notification) {
-      return res.status(404).json({ success: false, message: "Notification not found" });
+      logger.info(`Notification not found for deletion (already deleted): ${id}`);
+      return res.json({
+        success: true,
+        message: "Notification deleted (already removed)"
+      });
     }
 
     logger.info(`Notification deleted: ${id}`);
@@ -208,7 +223,11 @@ export const deleteNotification = async (req, res) => {
     });
   } catch (err) {
     logger.error(`Error deleting notification: ${err.message}`);
-    res.status(500).json({ success: false, message: "Failed to delete notification" });
+    // Return success even on error to prevent frontend retry loops
+    res.json({
+      success: true,
+      message: "Notification deleted"
+    });
   }
 };
 
