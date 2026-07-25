@@ -24,28 +24,15 @@ const requiredEnvVars = [
   'PORT',
   'MONGO_URL', 
   'JWT_SECRET',
-  'FRONTEND_URL'
+  'FRONTEND_URL',
+  'SMTP_HOST',
+  'SMTP_PORT',
+  'SMTP_USER',
+  'SMTP_PASS',
+  'EMAIL_FROM'
 ];
 
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-// Email configuration validation
-const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
-const hasEmailConfig = 
-  (emailProvider === 'resend' && process.env.RESEND_API_KEY) ||
-  (emailProvider === 'brevo' && process.env.BREVO_API_KEY) ||
-  (emailProvider === 'gmail' && process.env.EMAIL_USER && process.env.EMAIL_PASS) ||
-  (emailProvider === 'custom' && process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS);
-
-if (!hasEmailConfig) {
-  console.error(`❌ FATAL: Email configuration missing for provider '${emailProvider}'`);
-  console.error(`Required variables for ${emailProvider}:`);
-  if (emailProvider === 'resend') console.error('   - RESEND_API_KEY');
-  else if (emailProvider === 'brevo') console.error('   - BREVO_API_KEY');
-  else if (emailProvider === 'gmail') console.error('   - EMAIL_USER, EMAIL_PASS');
-  else if (emailProvider === 'custom') console.error('   - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS');
-  process.exit(1);
-}
 
 if (missingEnvVars.length > 0) {
   console.error("❌ FATAL: Missing required environment variables:");

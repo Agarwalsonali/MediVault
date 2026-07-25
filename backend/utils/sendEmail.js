@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import axios from 'axios';
 import { createFeatureLogger } from './logger.js';
 
 const emailLogger = createFeatureLogger('email');
@@ -21,164 +20,35 @@ const RETRYABLE_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTF
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Send email using Resend HTTP API (bypasses SMTP - works on cloud platforms)
- * @param {Object} params - Email parameters
- * @returns {Promise<Object>} Send result
- */
-const sendViaResendAPI = async ({ to, subject, text, html }) => {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY is required for Resend HTTP API');
-  }
-
-  // Use Resend's onboarding domain by default (works without domain verification)
-  // If you have a verified custom domain, set EMAIL_FROM environment variable
-  const fromAddress = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-
-  emailLogger.info('Sending email via Resend HTTP API', { to, subject, from: fromAddress });
-
-  const response = await axios.post(
-    'https://api.resend.com/emails',
-    {
-      from: `"MediVault" <${fromAddress}>`,
-      to: [to],
-      subject,
-      text,
-      html
-    },
-    {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    }
-  );
-
-  emailLogger.info('Email sent via Resend HTTP API', {
-    to,
-    subject,
-    messageId: response.data?.id,
-    response: response.data
-  });
-
-  return response.data;
-};
-
-/**
- * Creates and configures SMTP transporter based on environment variables
- * Supports: Resend (HTTP API fallback to SMTP), Gmail, Brevo, and custom SMTP
+ * Creates and configures Brevo SMTP transporter
  * @returns {Object} Nodemailer transporter instance
  * @throws {Error} If email configuration is invalid
  */
 const createTransporter = () => {
-  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+  emailLogger.info('Creating Brevo SMTP transporter');
   
-  emailLogger.info('Creating email transporter', { emailProvider });
-  
-  // Resend SMTP (fallback - HTTP API is preferred)
-  if (emailProvider === 'resend') {
-    if (!process.env.RESEND_API_KEY) {
-      throw new Error('EMAIL_PROVIDER=resend requires RESEND_API_KEY environment variable');
-    }
-    
-    return nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'resend',
-        pass: process.env.RESEND_API_KEY
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      connectionTimeout: 60000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-      family: 4
-    });
+  // Validate required environment variables
+  const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'EMAIL_FROM'];
+  const missing = requiredVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
   
-  // Brevo (formerly Sendinblue) - recommended production SMTP
-  if (emailProvider === 'brevo') {
-    if (!process.env.BREVO_API_KEY) {
-      throw new Error('EMAIL_PROVIDER=brevo requires BREVO_API_KEY environment variable');
-    }
-    
-    return nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.BREVO_API_KEY,
-        pass: process.env.BREVO_SMTP_KEY || process.env.BREVO_API_KEY
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      connectionTimeout: 60000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000
-    });
-  }
-  
-  // Custom SMTP configuration
-  if (emailProvider === 'custom') {
-    const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS'];
-    const missing = requiredVars.filter(v => !process.env[v]);
-    if (missing.length > 0) {
-      throw new Error(`EMAIL_PROVIDER=custom requires: ${missing.join(', ')}`);
-    }
-    
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT, 10),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      connectionTimeout: 60000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000
-    });
-  }
-  
-  // Gmail (legacy, not recommended for production)
-  if (emailProvider === 'gmail') {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error('EMAIL_PROVIDER=gmail requires EMAIL_USER and EMAIL_PASS environment variables');
-    }
-    
-    emailLogger.warn('Using Gmail SMTP - not recommended for production. Consider using Brevo or Resend.');
-    
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      // Force IPv4 to avoid IPv6 connectivity issues on cloud platforms
-      family: 4,
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 50,
-      connectionTimeout: 60000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-  }
-  
-  throw new Error(`Unsupported EMAIL_PROVIDER: ${emailProvider}. Supported: resend, brevo, gmail, custom`);
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    connectionTimeout: 60000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+  });
 };
 
 /**
@@ -194,36 +64,18 @@ const getTransporter = () => {
 };
 
 /**
- * Verifies the email service connection (called once at startup)
- * For Resend HTTP API, we just validate the API key format
+ * Verifies the Brevo SMTP connection (called once at startup)
  * @returns {Promise<void>}
  */
 export const verifyEmailConnection = async () => {
   try {
-    const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
-    
-    if (emailProvider === 'resend') {
-      const apiKey = process.env.RESEND_API_KEY;
-      if (!apiKey) {
-        throw new Error('RESEND_API_KEY is required');
-      }
-      // Validate Resend API key format (starts with re_)
-      if (!apiKey.startsWith('re_')) {
-        emailLogger.warn('RESEND_API_KEY format looks invalid (should start with re_)');
-      }
-      emailLogger.info('Resend HTTP API configuration validated');
-      transporterVerified = true;
-      return;
-    }
-    
-    // For other providers, use SMTP verification
     const trans = getTransporter();
-    emailLogger.info('Verifying email transporter connection...');
+    emailLogger.info('Verifying Brevo SMTP transporter connection...');
     await trans.verify();
     transporterVerified = true;
-    emailLogger.info('Email transporter verified successfully');
+    emailLogger.info('Brevo SMTP transporter verified successfully');
   } catch (error) {
-    emailLogger.error('Email service verification failed', {
+    emailLogger.error('Brevo SMTP verification failed', {
       error: error.message,
       code: error.code,
       stack: error.stack
@@ -233,7 +85,7 @@ export const verifyEmailConnection = async () => {
 };
 
 /**
- * Sends an email with retry logic for network errors
+ * Sends an email with retry logic for network errors using Brevo SMTP
  * @param {Object} params - Email parameters
  * @param {string} params.to - Recipient email address
  * @param {string} params.subject - Email subject
@@ -244,93 +96,18 @@ export const verifyEmailConnection = async () => {
  * @throws {Error} If email fails after all retries
  */
 export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => {
-  const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+  const trans = getTransporter();
+  const fromAddress = process.env.EMAIL_FROM;
   let lastError = null;
   
-  // Use Resend HTTP API for Resend provider (bypasses SMTP issues on cloud)
-  if (emailProvider === 'resend') {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        emailLogger.info('Sending email via Resend HTTP API', { 
-          to, 
-          subject, 
-          attempt: attempt + 1,
-          maxRetries: maxRetries + 1
-        });
-        
-        const result = await sendViaResendAPI({ to, subject, text, html });
-        
-        emailLogger.info('Email sent successfully via Resend HTTP API', { 
-          to, 
-          subject,
-          messageId: result.id,
-          attempt: attempt + 1
-        });
-        
-        return result;
-        
-      } catch (error) {
-        lastError = error;
-        
-        emailLogger.error('Resend HTTP API send attempt failed', {
-          to,
-          subject,
-          attempt: attempt + 1,
-          error: error.message,
-          code: error.code,
-          response: error.response?.data,
-          stack: error.stack
-        });
-        
-        // Check if error is retryable
-        const isRetryable = RETRYABLE_ERROR_CODES.includes(error.code) || 
-                           error.code === 'ETIMEDOUT' ||
-                           error.code === 'ECONNRESET' ||
-                           error.response?.status >= 500;
-        
-        // Don't retry if this was the last attempt or error is not retryable
-        if (attempt >= maxRetries || !isRetryable) {
-          emailLogger.error('Email send failed - no more retries or non-retryable error', {
-            to,
-            subject,
-            totalAttempts: attempt + 1,
-            isRetryable,
-            finalError: error.message,
-            errorCode: error.code
-          });
-          throw new Error(`Failed to send email after ${attempt + 1} attempts: ${error.message}`);
-        }
-        
-        // Exponential backoff: 1s, 2s, 4s, 8s...
-        const backoffMs = Math.min(1000 * Math.pow(2, attempt), 8000);
-        emailLogger.info(`Retrying email send after ${backoffMs}ms backoff`, {
-          to,
-          attempt: attempt + 1,
-          nextAttempt: attempt + 2
-        });
-        await sleep(backoffMs);
-      }
-    }
-    
-    // This should never be reached, but just in case
-    throw lastError || new Error('Unknown error sending email');
-  }
-  
-  // For other providers, use SMTP
-  const trans = getTransporter();
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      emailLogger.info('Sending email via SMTP', { 
+      emailLogger.info('Sending email via Brevo SMTP', { 
         to, 
         subject, 
         attempt: attempt + 1,
-        maxRetries: maxRetries + 1,
-        emailProvider 
+        maxRetries: maxRetries + 1
       });
-      
-      const fromAddress = emailProvider === 'gmail' 
-        ? process.env.EMAIL_USER 
-        : process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@medivault.com';
       
       const info = await trans.sendMail({
         from: `"MediVault" <${fromAddress}>`,
@@ -340,7 +117,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
         html
       });
       
-      emailLogger.info('Email sent successfully via SMTP', { 
+      emailLogger.info('Email sent successfully via Brevo SMTP', { 
         to, 
         subject,
         messageId: info.messageId,
@@ -355,7 +132,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
     } catch (error) {
       lastError = error;
       
-      emailLogger.error('SMTP send attempt failed', {
+      emailLogger.error('Brevo SMTP send attempt failed', {
         to,
         subject,
         attempt: attempt + 1,
