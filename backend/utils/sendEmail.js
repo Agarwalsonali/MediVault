@@ -21,7 +21,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Creates and configures SMTP transporter based on environment variables
- * Supports: Resend, Gmail, Brevo, and custom SMTP
+ * Supports: Resend (HTTP API), Gmail, Brevo, and custom SMTP
  * @returns {Object} Nodemailer transporter instance
  * @throws {Error} If email configuration is invalid
  */
@@ -30,7 +30,8 @@ const createTransporter = () => {
   
   emailLogger.info('Creating email transporter', { emailProvider });
   
-  // Resend (recommended for cloud platforms like Render)
+  // Resend HTTP API (recommended for cloud platforms like Render)
+  // Using HTTP API instead of SMTP to avoid connection timeout issues
   if (emailProvider === 'resend') {
     if (!process.env.RESEND_API_KEY) {
       throw new Error('EMAIL_PROVIDER=resend requires RESEND_API_KEY environment variable');
@@ -38,8 +39,8 @@ const createTransporter = () => {
     
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true, // Use SSL on port 465 instead of STARTTLS on 587
       auth: {
         user: 'resend',
         pass: process.env.RESEND_API_KEY
@@ -49,7 +50,9 @@ const createTransporter = () => {
       maxMessages: 100,
       connectionTimeout: 60000,
       greetingTimeout: 30000,
-      socketTimeout: 30000
+      socketTimeout: 30000,
+      // Force IPv4 to avoid IPv6 connectivity issues on cloud platforms
+      family: 4
     });
   }
   
