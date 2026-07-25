@@ -1,32 +1,31 @@
 import { createFeatureLogger } from './logger.js';
-import { ApiClient, TransactionalEmailsApi } from '@getbrevo/brevo';
+import { BrevoClient } from '@getbrevo/brevo';
 
 const emailLogger = createFeatureLogger('email');
 
 /**
  * Singleton Brevo API client instance
  */
-let apiInstance = null;
+let brevoClient = null;
 
 /**
  * Gets or creates the singleton Brevo API client
- * @returns {TransactionalEmailsApi} Brevo TransactionalEmailsApi instance
+ * @returns {BrevoClient} Brevo client instance
  * @throws {Error} If BREVO_API_KEY is not configured
  */
 const getBrevoApiClient = () => {
-  if (!apiInstance) {
+  if (!brevoClient) {
     const apiKey = process.env.BREVO_API_KEY;
     if (!apiKey) {
       throw new Error('BREVO_API_KEY environment variable is required');
     }
 
-    const defaultClient = ApiClient.instance;
-    defaultClient.authentications['api-key'].apiKey = apiKey;
-
-    apiInstance = new TransactionalEmailsApi();
+    brevoClient = new BrevoClient({
+      apiKey: apiKey
+    });
     emailLogger.info('Singleton Brevo API client created');
   }
-  return apiInstance;
+  return brevoClient;
 };
 
 /**
@@ -48,7 +47,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  * @throws {Error} If email fails after all retries
  */
 export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => {
-  const api = getBrevoApiClient();
+  const brevo = getBrevoApiClient();
   const fromAddress = process.env.EMAIL_FROM;
   let lastError = null;
   
@@ -61,7 +60,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
         maxRetries: maxRetries + 1
       });
 
-      const sendSmtpEmail = {
+      const result = await brevo.transactionalEmails.sendTransacEmail({
         sender: {
           name: 'MediVault',
           email: fromAddress
@@ -74,9 +73,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
         subject,
         textContent: text,
         htmlContent: html
-      };
-
-      const result = await api.sendTransacEmail(sendSmtpEmail);
+      });
       
       emailLogger.info('Email sent successfully via Brevo Transactional Email API', { 
         to, 
