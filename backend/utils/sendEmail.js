@@ -1,16 +1,33 @@
-import nodemailer from 'nodemailer';
 import { createFeatureLogger } from './logger.js';
+import { ApiClient, TransactionalEmailsApi } from '@getbrevo/brevo';
 
 const emailLogger = createFeatureLogger('email');
 
-// Singleton transporter instance
-let transporter = null;
-let transporterVerified = false;
+/**
+ * Singleton Brevo API client instance
+ */
+let apiInstance = null;
 
 /**
- * Network error codes that should trigger retry
+ * Gets or creates the singleton Brevo API client
+ * @returns {TransactionalEmailsApi} Brevo TransactionalEmailsApi instance
+ * @throws {Error} If BREVO_API_KEY is not configured
  */
-const RETRYABLE_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN'];
+const getBrevoApiClient = () => {
+  if (!apiInstance) {
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+      throw new Error('BREVO_API_KEY environment variable is required');
+    }
+
+    const defaultClient = ApiClient.instance;
+    defaultClient.authentications['api-key'].apiKey = apiKey;
+
+    apiInstance = new TransactionalEmailsApi();
+    emailLogger.info('Singleton Brevo API client created');
+  }
+  return apiInstance;
+};
 
 /**
  * Sleep utility for retry backoff
@@ -20,144 +37,82 @@ const RETRYABLE_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTF
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Creates and configures Brevo SMTP transporter
- * @returns {Object} Nodemailer transporter instance
- * @throws {Error} If email configuration is invalid
- */
-const createTransporter = () => {
-  emailLogger.info('Creating Brevo SMTP transporter');
-  
-  // Validate required environment variables
-  const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'EMAIL_FROM'];
-  const missing = requiredVars.filter(v => !process.env[v]);
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
-  }
-  
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    connectionTimeout: 60000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-  });
-};
-
-/**
- * Gets or creates the singleton transporter instance
- * @returns {Object} Nodemailer transporter instance
- */
-const getTransporter = () => {
-  if (!transporter) {
-    transporter = createTransporter();
-    emailLogger.info('Singleton transporter created');
-  }
-  return transporter;
-};
-
-/**
- * Verifies the Brevo SMTP connection (called once at startup)
- * @returns {Promise<void>}
- */
-export const verifyEmailConnection = async () => {
-  try {
-    const trans = getTransporter();
-    emailLogger.info('Verifying Brevo SMTP transporter connection...');
-    await trans.verify();
-    transporterVerified = true;
-    emailLogger.info('Brevo SMTP transporter verified successfully');
-  } catch (error) {
-    emailLogger.error('Brevo SMTP verification failed', {
-      error: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-    throw error;
-  }
-};
-
-/**
- * Sends an email with retry logic for network errors using Brevo SMTP
+ * Sends an email using Brevo Transactional Email API with retry logic for 5xx errors
  * @param {Object} params - Email parameters
  * @param {string} params.to - Recipient email address
  * @param {string} params.subject - Email subject
  * @param {string} params.text - Plain text version
  * @param {string} params.html - HTML version
  * @param {number} params.maxRetries - Maximum retry attempts (default: 3)
- * @returns {Promise<Object>} Send result
+ * @returns {Promise<Object>} Send result with messageId
  * @throws {Error} If email fails after all retries
  */
 export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => {
-  const trans = getTransporter();
+  const api = getBrevoApiClient();
   const fromAddress = process.env.EMAIL_FROM;
   let lastError = null;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      emailLogger.info('Sending email via Brevo SMTP', { 
+      emailLogger.info('Sending email via Brevo Transactional Email API', { 
         to, 
         subject, 
         attempt: attempt + 1,
         maxRetries: maxRetries + 1
       });
-      
-      const info = await trans.sendMail({
-        from: `"MediVault" <${fromAddress}>`,
-        to,
+
+      const sendSmtpEmail = {
+        sender: {
+          name: 'MediVault',
+          email: fromAddress
+        },
+        to: [
+          {
+            email: to
+          }
+        ],
         subject,
-        text,
-        html
-      });
+        textContent: text,
+        htmlContent: html
+      };
+
+      const result = await api.sendTransacEmail(sendSmtpEmail);
       
-      emailLogger.info('Email sent successfully via Brevo SMTP', { 
+      emailLogger.info('Email sent successfully via Brevo Transactional Email API', { 
         to, 
         subject,
-        messageId: info.messageId,
-        response: info.response,
-        accepted: info.accepted,
-        rejected: info.rejected,
+        messageId: result.messageId,
         attempt: attempt + 1
       });
       
-      return info;
+      return { messageId: result.messageId };
       
     } catch (error) {
       lastError = error;
       
-      emailLogger.error('Brevo SMTP send attempt failed', {
+      emailLogger.error('Brevo API send attempt failed', {
         to,
         subject,
         attempt: attempt + 1,
         error: error.message,
-        code: error.code,
-        command: error.command,
-        response: error.response,
-        responseCode: error.responseCode,
+        statusCode: error.response?.statusCode,
+        responseBody: error.response?.body,
         stack: error.stack
       });
       
-      // Check if error is retryable
-      const isRetryable = RETRYABLE_ERROR_CODES.includes(error.code) || 
-                         error.code === 'ETIMEDOUT' ||
-                         error.code === 'ECONNRESET';
+      // Check if error is retryable (5xx server errors)
+      const statusCode = error.response?.statusCode;
+      const isRetryable = statusCode && statusCode >= 500 && statusCode < 600;
       
-      // Don't retry if this was the last attempt or error is not retryable
+      // Don't retry if this was the last attempt or error is not retryable (4xx)
       if (attempt >= maxRetries || !isRetryable) {
         emailLogger.error('Email send failed - no more retries or non-retryable error', {
           to,
           subject,
           totalAttempts: attempt + 1,
           isRetryable,
-          finalError: error.message,
-          errorCode: error.code
+          statusCode,
+          finalError: error.message
         });
         throw new Error(`Failed to send email after ${attempt + 1} attempts: ${error.message}`);
       }
@@ -339,7 +294,7 @@ function otpDigitBoxes(otp) {
  * Sends email verification OTP
  * @param {string} email - Recipient email address
  * @param {string} otp - 6-digit verification code
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendVerificationOtpEmail = async (email, otp) => {
   const subject = "Verify your MediVault account";
@@ -389,7 +344,7 @@ export const sendVerificationOtpEmail = async (email, otp) => {
  * Sends login OTP
  * @param {string} email - Recipient email address
  * @param {string} otp - 6-digit login code
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendLoginOtpEmail = async (email, otp) => {
   const subject = "Your MediVault login code";
@@ -435,7 +390,7 @@ export const sendLoginOtpEmail = async (email, otp) => {
  * Sends password reset OTP
  * @param {string} email - Recipient email address
  * @param {string} otp - 6-digit reset code
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendPasswordResetOtpEmail = async (email, otp) => {
   const subject = "Reset your MediVault password";
@@ -477,7 +432,7 @@ export const sendPasswordResetOtpEmail = async (email, otp) => {
  * @param {string} email - Recipient email address
  * @param {string} link - Invitation link
  * @param {string} role - Staff role (Doctor, Nurse, Staff, Admin)
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendInviteEmail = async (email, link, role = 'Staff') => {
   const subject = `You've been invited to join MediVault as ${role}`;
@@ -603,7 +558,7 @@ const escapeHtml = (value = '') =>
  * @param {string} params.issueType - Type of issue
  * @param {string} params.message - Support message
  * @param {string} params.submittedAt - Submission timestamp
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendSupportRequestNotificationEmail = async ({
   to,
@@ -680,7 +635,7 @@ export const sendSupportRequestNotificationEmail = async ({
  * Sends security alert email for account lockout
  * @param {string} email - Recipient email address
  * @param {string} fullName - User's full name
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Brevo API send result
  */
 export const sendSecurityAlertEmail = async (email, fullName = "User") => {
   const subject = "Security Alert - MediVault";

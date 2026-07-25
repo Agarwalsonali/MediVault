@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import { sendEmail, verifyEmailConnection } from "./utils/sendEmail.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -25,10 +24,7 @@ const requiredEnvVars = [
   'MONGO_URL', 
   'JWT_SECRET',
   'FRONTEND_URL',
-  'SMTP_HOST',
-  'SMTP_PORT',
-  'SMTP_USER',
-  'SMTP_PASS',
+  'BREVO_API_KEY',
   'EMAIL_FROM'
 ];
 
@@ -112,20 +108,6 @@ mongoose.connect(process.env.MONGO_URL, {
     logger.error("MongoDB connection failed", { error: err.message, stack: err.stack });
     // Don't exit, let the app run in case DB comes back online
   });
-
-// Verify email connection at startup
-verifyEmailConnection()
-  .then(() => {
-    console.log("Email service verified successfully");
-    logger.info("Email service verified successfully");
-  })
-  .catch((err) => {
-    console.error("Email service verification failed:", err.message);
-    logger.error("Email service verification failed", { error: err.message, stack: err.stack });
-    // Don't exit, let the app run - email will retry on send
-  });
-
-//sendEmail("agarwalsonali922@gmail.com", "Test Email", "Hello OTP Test");
 
 console.log("Mounting routes...");
 
