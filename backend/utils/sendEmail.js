@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import axios from 'axios';
 import { createFeatureLogger } from './logger.js';
 
 const emailLogger = createFeatureLogger('email');
@@ -20,8 +21,51 @@ const RETRYABLE_ERROR_CODES = ['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTF
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
+ * Send email using Resend HTTP API (bypasses SMTP - works on cloud platforms)
+ * @param {Object} params - Email parameters
+ * @returns {Promise<Object>} Send result
+ */
+const sendViaResendAPI = async ({ to, subject, text, html }) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is required for Resend HTTP API');
+  }
+
+  const fromAddress = process.env.EMAIL_FROM || 'noreply@medivault.com';
+
+  emailLogger.info('Sending email via Resend HTTP API', { to, subject });
+
+  const response = await axios.post(
+    'https://api.resend.com/emails',
+    {
+      from: `"MediVault" <${fromAddress}>`,
+      to: [to],
+      subject,
+      text,
+      html
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    }
+  );
+
+  emailLogger.info('Email sent via Resend HTTP API', {
+    to,
+    subject,
+    messageId: response.data?.id,
+    response: response.data
+  });
+
+  return response.data;
+};
+
+/**
  * Creates and configures SMTP transporter based on environment variables
- * Supports: Resend (HTTP API), Gmail, Brevo, and custom SMTP
+ * Supports: Resend (HTTP API fallback to SMTP), Gmail, Brevo, and custom SMTP
  * @returns {Object} Nodemailer transporter instance
  * @throws {Error} If email configuration is invalid
  */
@@ -30,8 +74,7 @@ const createTransporter = () => {
   
   emailLogger.info('Creating email transporter', { emailProvider });
   
-  // Resend HTTP API (recommended for cloud platforms like Render)
-  // Using HTTP API instead of SMTP to avoid connection timeout issues
+  // Resend SMTP (fallback - HTTP API is preferred)
   if (emailProvider === 'resend') {
     if (!process.env.RESEND_API_KEY) {
       throw new Error('EMAIL_PROVIDER=resend requires RESEND_API_KEY environment variable');
@@ -40,7 +83,7 @@ const createTransporter = () => {
     return nodemailer.createTransport({
       host: 'smtp.resend.com',
       port: 465,
-      secure: true, // Use SSL on port 465 instead of STARTTLS on 587
+      secure: true,
       auth: {
         user: 'resend',
         pass: process.env.RESEND_API_KEY
@@ -51,7 +94,6 @@ const createTransporter = () => {
       connectionTimeout: 60000,
       greetingTimeout: 30000,
       socketTimeout: 30000,
-      // Force IPv4 to avoid IPv6 connectivity issues on cloud platforms
       family: 4
     });
   }
@@ -150,18 +192,36 @@ const getTransporter = () => {
 };
 
 /**
- * Verifies the transporter connection (called once at startup)
+ * Verifies the email service connection (called once at startup)
+ * For Resend HTTP API, we just validate the API key format
  * @returns {Promise<void>}
  */
 export const verifyEmailConnection = async () => {
   try {
+    const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
+    
+    if (emailProvider === 'resend') {
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey) {
+        throw new Error('RESEND_API_KEY is required');
+      }
+      // Validate Resend API key format (starts with re_)
+      if (!apiKey.startsWith('re_')) {
+        emailLogger.warn('RESEND_API_KEY format looks invalid (should start with re_)');
+      }
+      emailLogger.info('Resend HTTP API configuration validated');
+      transporterVerified = true;
+      return;
+    }
+    
+    // For other providers, use SMTP verification
     const trans = getTransporter();
     emailLogger.info('Verifying email transporter connection...');
     await trans.verify();
     transporterVerified = true;
     emailLogger.info('Email transporter verified successfully');
   } catch (error) {
-    emailLogger.error('Email transporter verification failed', {
+    emailLogger.error('Email service verification failed', {
       error: error.message,
       code: error.code,
       stack: error.stack
@@ -178,17 +238,87 @@ export const verifyEmailConnection = async () => {
  * @param {string} params.text - Plain text version
  * @param {string} params.html - HTML version
  * @param {number} params.maxRetries - Maximum retry attempts (default: 3)
- * @returns {Promise<Object>} Nodemailer send result
+ * @returns {Promise<Object>} Send result
  * @throws {Error} If email fails after all retries
  */
 export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => {
-  const trans = getTransporter();
   const emailProvider = process.env.EMAIL_PROVIDER || 'resend';
   let lastError = null;
   
+  // Use Resend HTTP API for Resend provider (bypasses SMTP issues on cloud)
+  if (emailProvider === 'resend') {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        emailLogger.info('Sending email via Resend HTTP API', { 
+          to, 
+          subject, 
+          attempt: attempt + 1,
+          maxRetries: maxRetries + 1
+        });
+        
+        const result = await sendViaResendAPI({ to, subject, text, html });
+        
+        emailLogger.info('Email sent successfully via Resend HTTP API', { 
+          to, 
+          subject,
+          messageId: result.id,
+          attempt: attempt + 1
+        });
+        
+        return result;
+        
+      } catch (error) {
+        lastError = error;
+        
+        emailLogger.error('Resend HTTP API send attempt failed', {
+          to,
+          subject,
+          attempt: attempt + 1,
+          error: error.message,
+          code: error.code,
+          response: error.response?.data,
+          stack: error.stack
+        });
+        
+        // Check if error is retryable
+        const isRetryable = RETRYABLE_ERROR_CODES.includes(error.code) || 
+                           error.code === 'ETIMEDOUT' ||
+                           error.code === 'ECONNRESET' ||
+                           error.response?.status >= 500;
+        
+        // Don't retry if this was the last attempt or error is not retryable
+        if (attempt >= maxRetries || !isRetryable) {
+          emailLogger.error('Email send failed - no more retries or non-retryable error', {
+            to,
+            subject,
+            totalAttempts: attempt + 1,
+            isRetryable,
+            finalError: error.message,
+            errorCode: error.code
+          });
+          throw new Error(`Failed to send email after ${attempt + 1} attempts: ${error.message}`);
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s, 8s...
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+        emailLogger.info(`Retrying email send after ${backoffMs}ms backoff`, {
+          to,
+          attempt: attempt + 1,
+          nextAttempt: attempt + 2
+        });
+        await sleep(backoffMs);
+      }
+    }
+    
+    // This should never be reached, but just in case
+    throw lastError || new Error('Unknown error sending email');
+  }
+  
+  // For other providers, use SMTP
+  const trans = getTransporter();
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      emailLogger.info('Sending email', { 
+      emailLogger.info('Sending email via SMTP', { 
         to, 
         subject, 
         attempt: attempt + 1,
@@ -208,7 +338,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
         html
       });
       
-      emailLogger.info('Email sent successfully', { 
+      emailLogger.info('Email sent successfully via SMTP', { 
         to, 
         subject,
         messageId: info.messageId,
@@ -223,7 +353,7 @@ export const sendEmail = async ({ to, subject, text, html, maxRetries = 3 }) => 
     } catch (error) {
       lastError = error;
       
-      emailLogger.error('Email send attempt failed', {
+      emailLogger.error('SMTP send attempt failed', {
         to,
         subject,
         attempt: attempt + 1,
