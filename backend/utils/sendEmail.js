@@ -31,9 +31,11 @@ const sendViaResendAPI = async ({ to, subject, text, html }) => {
     throw new Error('RESEND_API_KEY is required for Resend HTTP API');
   }
 
-  const fromAddress = process.env.EMAIL_FROM || 'noreply@medivault.com';
+  // Use Resend's onboarding domain by default (works without domain verification)
+  // If you have a verified custom domain, set EMAIL_FROM environment variable
+  const fromAddress = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-  emailLogger.info('Sending email via Resend HTTP API', { to, subject });
+  emailLogger.info('Sending email via Resend HTTP API', { to, subject, from: fromAddress });
 
   const response = await axios.post(
     'https://api.resend.com/emails',
