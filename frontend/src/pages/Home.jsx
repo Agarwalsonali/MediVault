@@ -439,14 +439,13 @@ export default function Home() {
           color: #fff;
           box-shadow: 0 0 16px rgba(0,194,168,0.4);
           position: relative;
-          overflow: hidden;
         }
         .mv-brand-icon::before {
           content: '';
           position: absolute;
-          inset: 0;
-          border-radius: 10px;
-          background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 60%);
+          inset: 4px;
+          border-radius: 8px;
+          background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
           animation: inner-white-pulse 2s ease-in-out infinite;
         }
         .mv-brand-name {
@@ -918,7 +917,7 @@ export default function Home() {
             padding: 12px 16px;
             flex-direction: row;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
           }
 
           .mv-brand {
@@ -932,15 +931,17 @@ export default function Home() {
           .mv-nav-actions {
             width: auto;
             justify-content: flex-end;
-            gap: 6px;
+            gap: 8px;
+            flex-shrink: 0;
           }
 
           .mv-nav-actions .mv-btn {
-            flex: 0;
+            flex: 0 0 auto;
             justify-content: center;
-            padding-left: 10px;
-            padding-right: 10px;
-            font-size: 0.75rem;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            min-width: auto;
+            white-space: nowrap;
           }
 
           .mv-hero {
@@ -1037,6 +1038,7 @@ export default function Home() {
         @media (max-width: 480px) {
           .mv-nav {
             padding: 10px 12px;
+            gap: 8px;
           }
 
           .mv-brand-icon {
@@ -1048,10 +1050,13 @@ export default function Home() {
             font-size: 0.9rem;
           }
 
+          .mv-nav-actions {
+            gap: 6px;
+          }
+
           .mv-nav-actions .mv-btn {
-            padding-left: 8px;
-            padding-right: 8px;
-            font-size: 0.7rem;
+            padding: 6px 10px;
+            font-size: 0.75rem;
           }
 
           .mv-hero {
