@@ -29,19 +29,40 @@ export const getNotifications = async (req, res) => {
 
     logger.info(`Fetching notifications for user: ${userId}`, { limit, offset, unreadOnly });
 
-    // Add timeout to database queries
-    const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 })
-      .skip(parseInt(offset))
-      .limit(parseInt(limit))
-      .lean()
-      .maxTimeMS(5000); // 5 second timeout
+    // Add timeout to database queries with error handling
+    let notifications, total, unreadCount;
+    
+    try {
+      notifications = await Notification.find(query)
+        .sort({ createdAt: -1 })
+        .skip(parseInt(offset))
+        .limit(parseInt(limit))
+        .lean()
+        .maxTimeMS(5000); // 5 second timeout
+    } catch (dbError) {
+      logger.error(`Database error fetching notifications: ${dbError.message}`, { 
+        stack: dbError.stack,
+        userId 
+      });
+      return res.status(500).json({ success: false, message: "Database query failed" });
+    }
 
-    const total = await Notification.countDocuments(query).maxTimeMS(5000);
-    const unreadCount = await Notification.countDocuments({
-      recipientId: userId,
-      isRead: false
-    }).maxTimeMS(5000);
+    try {
+      total = await Notification.countDocuments(query).maxTimeMS(5000);
+    } catch (dbError) {
+      logger.error(`Database error counting notifications: ${dbError.message}`, { userId });
+      total = notifications.length; // Fallback to current count
+    }
+
+    try {
+      unreadCount = await Notification.countDocuments({
+        recipientId: userId,
+        isRead: false
+      }).maxTimeMS(5000);
+    } catch (dbError) {
+      logger.error(`Database error counting unread: ${dbError.message}`, { userId });
+      unreadCount = 0; // Fallback
+    }
 
     logger.info(`Retrieved notifications for user: ${userId}`, { count: notifications.length, total, unreadCount });
     res.json({

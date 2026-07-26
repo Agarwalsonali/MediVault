@@ -49,11 +49,13 @@ console.log("FRONTEND_URL:", process.env.FRONTEND_URL ? "configured" : "NOT SET"
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err.message);
   console.error(err.stack);
+  logger.error("UNCAUGHT EXCEPTION", { error: err.message, stack: err.stack });
   process.exit(1);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("UNHANDLED REJECTION:", reason);
+  logger.error("UNHANDLED REJECTION", { reason: String(reason) });
 });
 
 const app = express();
