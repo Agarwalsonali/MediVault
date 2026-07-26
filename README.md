@@ -273,9 +273,9 @@ MONGO_URI=your_mongodb_connection
 
 JWT_SECRET=your_jwt_secret
 
-EMAIL_USER=your_email
+BREVO_API_KEY=your_brevo_api_key
 
-EMAIL_PASS=your_email_password
+EMAIL_FROM=your_email_from
 
 CLIENT_URL=http://localhost:5173
 ```
