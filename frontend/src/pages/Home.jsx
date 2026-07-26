@@ -339,22 +339,14 @@ export default function Home() {
             box-shadow: 0 0 0 0 rgba(255,255,255,0);
           }
         }
-        @keyframes icon-pulse {
+        @keyframes inner-white-pulse {
           0%, 100% {
-            box-shadow: 0 0 16px rgba(0,194,168,0.4), 0 0 0 0 rgba(255,255,255,0.4);
-          }
-          50% {
-            box-shadow: 0 0 24px rgba(0,194,168,0.6), 0 0 0 8px rgba(255,255,255,0.2);
-          }
-        }
-        @keyframes inner-glow {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(0.95);
+            opacity: 0.2;
+            transform: scale(0.8);
           }
           50% {
             opacity: 0.6;
-            transform: scale(1.05);
+            transform: scale(1.2);
           }
         }
         @keyframes shimmer {
@@ -447,15 +439,15 @@ export default function Home() {
           color: #fff;
           box-shadow: 0 0 16px rgba(0,194,168,0.4);
           position: relative;
-          animation: icon-pulse 2s ease-in-out infinite;
+          overflow: hidden;
         }
         .mv-brand-icon::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: 10px;
-          background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-          animation: inner-glow 2s ease-in-out infinite;
+          background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 60%);
+          animation: inner-white-pulse 2s ease-in-out infinite;
         }
         .mv-brand-name {
           font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
@@ -923,10 +915,10 @@ export default function Home() {
         @media (max-width: 768px) {
           .mv-nav {
             height: auto;
-            padding: 12px clamp(1rem, 4vw, 1.5rem);
+            padding: 12px 16px;
             flex-direction: row;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
           }
 
           .mv-brand {
@@ -940,28 +932,28 @@ export default function Home() {
           .mv-nav-actions {
             width: auto;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 6px;
           }
 
           .mv-nav-actions .mv-btn {
             flex: 0;
             justify-content: center;
-            padding-left: 12px;
-            padding-right: 12px;
-            font-size: 0.8rem;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size: 0.75rem;
           }
 
           .mv-hero {
-            padding: 100px clamp(1rem, 4vw, 1.5rem) 60px;
+            padding: 100px 16px 60px;
           }
 
           .mv-hero-title {
-            font-size: clamp(1.8rem, 8vw, 2.5rem);
+            font-size: clamp(1.8rem, 6vw, 2.2rem);
           }
 
           .mv-hero-sub {
             margin-bottom: 24px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
           }
 
           .mv-highlights {
@@ -974,7 +966,7 @@ export default function Home() {
           }
 
           .mv-section {
-            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+            padding: 0 16px 60px;
           }
 
           .mv-section-tag {
@@ -983,15 +975,13 @@ export default function Home() {
           }
 
           .mv-cta-btns {
-            flex-direction: row;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 10px;
           }
 
           .mv-cta-btns .mv-btn {
-            width: auto;
+            width: 100%;
             justify-content: center;
-            flex: 1;
-            min-width: 140px;
           }
 
           .mv-footer {
@@ -1007,10 +997,14 @@ export default function Home() {
             gap: 12px;
           }
 
+          .mv-stats {
+            flex-direction: column;
+          }
+
           .mv-stat { 
             border-right: none; 
             border-bottom: 1px solid var(--border);
-            min-width: 50%;
+            width: 100%;
           }
           .mv-stat:last-child { border-bottom: none; }
 
@@ -1032,17 +1026,17 @@ export default function Home() {
           }
 
           .mv-contact-section {
-            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+            padding: 0 16px 60px;
           }
 
           .mv-cta-section {
-            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+            padding: 0 16px 60px;
           }
         }
 
         @media (max-width: 480px) {
           .mv-nav {
-            padding: 10px clamp(0.75rem, 4vw, 1rem);
+            padding: 10px 12px;
           }
 
           .mv-brand-icon {
@@ -1055,63 +1049,51 @@ export default function Home() {
           }
 
           .mv-nav-actions .mv-btn {
-            padding-left: 10px;
-            padding-right: 10px;
-            font-size: 0.75rem;
+            padding-left: 8px;
+            padding-right: 8px;
+            font-size: 0.7rem;
           }
 
           .mv-hero {
-            padding: 80px clamp(0.75rem, 4vw, 1rem) 50px;
+            padding: 80px 12px 50px;
           }
 
           .mv-hero-title {
-            font-size: clamp(1.5rem, 10vw, 2rem);
+            font-size: clamp(1.5rem, 8vw, 1.8rem);
           }
 
           .mv-hero-sub {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
           }
 
           .mv-highlights {
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
           }
 
           .mv-section {
-            padding: 0 clamp(0.75rem, 4vw, 1rem) 50px;
+            padding: 0 12px 50px;
           }
 
           .mv-section-title {
-            font-size: clamp(1.4rem, 6vw, 1.8rem);
-          }
-
-          .mv-cta-btns .mv-btn {
-            min-width: 100%;
+            font-size: clamp(1.3rem, 5vw, 1.6rem);
           }
 
           .mv-stat {
-            min-width: 100%;
-            padding: 20px 16px;
-          }
-        }
-
-        @media (max-width: 420px) {
-          .mv-nav-actions {
-            flex-direction: column;
+            padding: 16px 12px;
           }
 
-          .mv-nav-actions .mv-btn {
-            width: 100%;
+          .mv-feature-card {
+            padding: 20px;
           }
 
           .mv-cta {
-            padding-left: 22px;
-            padding-right: 22px;
+            padding: clamp(30px, 5vw, 50px) 16px;
           }
 
           .mv-cta p {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
           }
         }
       `}</style>
