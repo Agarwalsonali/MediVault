@@ -323,8 +323,21 @@ export default function Home() {
           50%      { transform: translateY(-30px) scale(1.04); }
         }
         @keyframes pulse-ring {
-          0%   { transform: scale(1);   opacity: 0.6; }
-          100% { transform: scale(1.6); opacity: 0; }
+          0%   { 
+            transform: scale(1); 
+            opacity: 1;
+            box-shadow: 0 0 0 0 rgba(255,255,255,0.7);
+          }
+          70%  { 
+            transform: scale(1.5); 
+            opacity: 0.5;
+            box-shadow: 0 0 0 10px rgba(255,255,255,0);
+          }
+          100% { 
+            transform: scale(1.6); 
+            opacity: 0;
+            box-shadow: 0 0 0 0 rgba(255,255,255,0);
+          }
         }
         @keyframes shimmer {
           0%   { background-position: -200% center; }
@@ -419,10 +432,10 @@ export default function Home() {
         }
         .mv-brand-icon::after {
           content: '';
-          position: absolute; inset: -3px;
-          border-radius: 13px;
-          border: 2px solid rgba(0,194,168,0.5);
-          animation: pulse-ring 2.5s ease-out infinite;
+          position: absolute; inset: -4px;
+          border-radius: 14px;
+          border: 3px solid rgba(255,255,255,0.6);
+          animation: pulse-ring 2s ease-out infinite;
         }
         .mv-brand-name {
           font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
@@ -890,90 +903,109 @@ export default function Home() {
         @media (max-width: 640px) {
           .mv-nav {
             height: auto;
-            padding-top: 12px;
-            padding-bottom: 12px;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-          }
-
-          .mv-brand {
-            align-self: flex-start;
-          }
-
-          .mv-nav-actions {
-            width: 100%;
-            justify-content: space-between;
+            padding: 10px clamp(1rem, 4vw, 1.5rem);
+            flex-direction: row;
+            align-items: center;
             gap: 8px;
           }
 
+          .mv-brand {
+            align-self: center;
+          }
+
+          .mv-brand-name {
+            font-size: 1rem;
+          }
+
+          .mv-nav-actions {
+            width: auto;
+            justify-content: flex-end;
+            gap: 6px;
+          }
+
           .mv-nav-actions .mv-btn {
-            flex: 1;
+            flex: 0;
             justify-content: center;
-            padding-left: 12px;
-            padding-right: 12px;
-            font-size: 0.8rem;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size: 0.75rem;
           }
 
           .mv-hero {
-            padding-top: 150px;
-            padding-bottom: 80px;
+            padding-top: 120px;
+            padding-bottom: 60px;
           }
 
           .mv-hero-title {
-            font-size: clamp(2.1rem, 10vw, 3rem);
+            font-size: clamp(1.8rem, 8vw, 2.5rem);
           }
 
           .mv-hero-sub {
-            margin-bottom: 28px;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
           }
 
           .mv-highlights {
-            justify-content: flex-start;
-            gap: 10px 14px;
+            justify-content: center;
+            gap: 8px 12px;
           }
 
           .mv-scroll-hint {
-            margin-top: 56px;
+            margin-top: 40px;
           }
 
           .mv-section-tag {
-            font-size: 0.73rem;
-            padding: 6px 12px;
+            font-size: 0.7rem;
+            padding: 5px 10px;
           }
 
           .mv-cta-btns {
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
           }
 
           .mv-cta-btns .mv-btn {
-            width: 100%;
+            width: auto;
             justify-content: center;
+            flex: 1;
+            min-width: 140px;
           }
 
           .mv-footer {
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            text-align: center;
+            text-align: left;
+            gap: 12px;
           }
 
           .mv-footer-links {
-            justify-content: center;
+            justify-content: flex-end;
             flex-wrap: wrap;
-            gap: 14px;
+            gap: 12px;
           }
 
-          .mv-stat { border-right: none; border-bottom: 1px solid var(--border); }
+          .mv-stat { 
+            border-right: none; 
+            border-bottom: 1px solid var(--border);
+            min-width: 50%;
+          }
           .mv-stat:last-child { border-bottom: none; }
 
-          .mv-contact-grid,
-          .mv-contact-form-grid {
+          .mv-contact-grid {
             grid-template-columns: 1fr;
+          }
+
+          .mv-contact-form-grid {
+            grid-template-columns: 1fr 1fr;
           }
 
           .mv-contact-form,
           .mv-contact-card {
             padding: 16px;
+          }
+
+          .mv-feature-grid {
+            grid-template-columns: 1fr;
           }
         }
 
