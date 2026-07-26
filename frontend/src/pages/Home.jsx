@@ -421,7 +421,7 @@ export default function Home() {
           content: '';
           position: absolute; inset: -3px;
           border-radius: 13px;
-          border: 1px solid rgba(0,194,168,0.3);
+          border: 2px solid rgba(0,194,168,0.5);
           animation: pulse-ring 2.5s ease-out infinite;
         }
         .mv-brand-name {
