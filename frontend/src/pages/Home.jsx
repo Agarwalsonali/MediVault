@@ -339,6 +339,24 @@ export default function Home() {
             box-shadow: 0 0 0 0 rgba(255,255,255,0);
           }
         }
+        @keyframes icon-pulse {
+          0%, 100% {
+            box-shadow: 0 0 16px rgba(0,194,168,0.4), 0 0 0 0 rgba(255,255,255,0.4);
+          }
+          50% {
+            box-shadow: 0 0 24px rgba(0,194,168,0.6), 0 0 0 8px rgba(255,255,255,0.2);
+          }
+        }
+        @keyframes inner-glow {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(0.95);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.05);
+          }
+        }
         @keyframes shimmer {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
@@ -429,13 +447,15 @@ export default function Home() {
           color: #fff;
           box-shadow: 0 0 16px rgba(0,194,168,0.4);
           position: relative;
+          animation: icon-pulse 2s ease-in-out infinite;
         }
-        .mv-brand-icon::after {
+        .mv-brand-icon::before {
           content: '';
-          position: absolute; inset: -4px;
-          border-radius: 14px;
-          border: 3px solid rgba(255,255,255,0.6);
-          animation: pulse-ring 2s ease-out infinite;
+          position: absolute;
+          inset: 0;
+          border-radius: 10px;
+          background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+          animation: inner-glow 2s ease-in-out infinite;
         }
         .mv-brand-name {
           font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;
@@ -900,13 +920,13 @@ export default function Home() {
         .mv-footer-links a:hover { color: var(--text); }
 
         /* ── Responsive ── */
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .mv-nav {
             height: auto;
-            padding: 10px clamp(1rem, 4vw, 1.5rem);
+            padding: 12px clamp(1rem, 4vw, 1.5rem);
             flex-direction: row;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
           }
 
           .mv-brand {
@@ -920,20 +940,19 @@ export default function Home() {
           .mv-nav-actions {
             width: auto;
             justify-content: flex-end;
-            gap: 6px;
+            gap: 8px;
           }
 
           .mv-nav-actions .mv-btn {
             flex: 0;
             justify-content: center;
-            padding-left: 10px;
-            padding-right: 10px;
-            font-size: 0.75rem;
+            padding-left: 12px;
+            padding-right: 12px;
+            font-size: 0.8rem;
           }
 
           .mv-hero {
-            padding-top: 120px;
-            padding-bottom: 60px;
+            padding: 100px clamp(1rem, 4vw, 1.5rem) 60px;
           }
 
           .mv-hero-title {
@@ -954,6 +973,10 @@ export default function Home() {
             margin-top: 40px;
           }
 
+          .mv-section {
+            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+          }
+
           .mv-section-tag {
             font-size: 0.7rem;
             padding: 5px 10px;
@@ -972,14 +995,14 @@ export default function Home() {
           }
 
           .mv-footer {
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
-            text-align: left;
-            gap: 12px;
+            text-align: center;
+            gap: 16px;
           }
 
           .mv-footer-links {
-            justify-content: flex-end;
+            justify-content: center;
             flex-wrap: wrap;
             gap: 12px;
           }
@@ -996,7 +1019,7 @@ export default function Home() {
           }
 
           .mv-contact-form-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
           }
 
           .mv-contact-form,
@@ -1006,6 +1029,70 @@ export default function Home() {
 
           .mv-feature-grid {
             grid-template-columns: 1fr;
+          }
+
+          .mv-contact-section {
+            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+          }
+
+          .mv-cta-section {
+            padding: 0 clamp(1rem, 4vw, 1.5rem) 60px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .mv-nav {
+            padding: 10px clamp(0.75rem, 4vw, 1rem);
+          }
+
+          .mv-brand-icon {
+            width: 32px;
+            height: 32px;
+          }
+
+          .mv-brand-name {
+            font-size: 0.9rem;
+          }
+
+          .mv-nav-actions .mv-btn {
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size: 0.75rem;
+          }
+
+          .mv-hero {
+            padding: 80px clamp(0.75rem, 4vw, 1rem) 50px;
+          }
+
+          .mv-hero-title {
+            font-size: clamp(1.5rem, 10vw, 2rem);
+          }
+
+          .mv-hero-sub {
+            font-size: 0.9rem;
+          }
+
+          .mv-highlights {
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .mv-section {
+            padding: 0 clamp(0.75rem, 4vw, 1rem) 50px;
+          }
+
+          .mv-section-title {
+            font-size: clamp(1.4rem, 6vw, 1.8rem);
+          }
+
+          .mv-cta-btns .mv-btn {
+            min-width: 100%;
+          }
+
+          .mv-stat {
+            min-width: 100%;
+            padding: 20px 16px;
           }
         }
 
