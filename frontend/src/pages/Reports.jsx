@@ -260,7 +260,7 @@ export default function Reports() {
                       )}
                     </td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--mv-slate-dark)' }}>
-                      {r.doctorName || r.uploadedBy?.fullName || 'Staff'}
+                      {r.doctorName || '—'}
                     </td>
                     <td style={{ fontSize: '0.85rem', color: 'var(--mv-slate)' }}>
                       {formatDate(r.reportDate || r.createdAt)}
