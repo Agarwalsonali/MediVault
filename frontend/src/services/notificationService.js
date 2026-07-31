@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL + '/notifications';
+const RAW_API_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+const API_BASE_URL = RAW_API_URL || '/api';
+const API_URL = `${API_BASE_URL}/notifications`;
 
 const api = axios.create({
   baseURL: API_URL,

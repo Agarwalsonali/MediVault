@@ -1043,6 +1043,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
               box-shadow var(--t-base) var(--ease-out),
               background var(--t-base);
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 
@@ -1241,6 +1242,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
   background: var(--mv-white);
   transition: all var(--t-base) var(--ease-out);
   outline: none;
+  appearance: none;
   -webkit-appearance: none;
 }
 
@@ -1539,7 +1541,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
 }
 
 .dash-topbar-hamburger {
-  display: flex;
+  display: none;
   width: 36px; height: 36px;
   border-radius: var(--radius-sm);
   border: none;
@@ -2056,6 +2058,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
 
   .dash-topbar-hamburger {
     flex-shrink: 0;
+    display: flex !important;
   }
 
   .dash-topbar-actions {
