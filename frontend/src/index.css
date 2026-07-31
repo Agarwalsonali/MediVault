@@ -197,6 +197,10 @@
   color: var(--mv-teal-glow) !important;
 }
 
+[data-theme="dark"] .dash-nav-item svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
 [data-theme="dark"] .dash-sidebar-brand-name {
   color: var(--mv-slate-900) !important;
 }
@@ -1541,7 +1545,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
 }
 
 .dash-topbar-hamburger {
-  display: none;
+  display: flex;
   width: 36px; height: 36px;
   border-radius: var(--radius-sm);
   border: none;
@@ -1552,6 +1556,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
   justify-content: center;
   transition: background var(--t-fast);
 }
+
 
 .dash-topbar-hamburger:hover {
   background: var(--mv-mist);
@@ -2028,7 +2033,7 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
   }
 
   .dash-topbar-hamburger {
-    display: flex;
+    display: flex !important;
   }
 
   .dash-topbar-title {
@@ -2058,7 +2063,6 @@ h1, h2, h3, h4, h5, h6, p, span, div, a {
 
   .dash-topbar-hamburger {
     flex-shrink: 0;
-    display: flex !important;
   }
 
   .dash-topbar-actions {

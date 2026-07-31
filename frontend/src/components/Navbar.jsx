@@ -54,7 +54,7 @@ export default function Navbar({ scrolled = false }) {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center justify-center flex-1 px-8">
+            <nav className="hidden md:flex items-center justify-center flex-1 px-8" style={{ marginLeft: '60px' }}>
               <ul className="flex items-center gap-3">
                 {navLinks.map((link) => (
                   <li key={link.name}>

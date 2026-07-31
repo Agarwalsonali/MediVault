@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Upload, User, Users,
-  Shield, LogOut, Menu, Bell, Activity, Stethoscope, ClipboardList, Sun, Moon,
+  Shield, LogOut, Menu, Bell, ClipboardList, Sun, Moon,
   Check, Trash2, ChevronDown
 } from 'lucide-react';
 import { getRole, logout } from '../services/authService.js';
@@ -18,19 +18,19 @@ const NAV_CONFIG = {
     { to: '/dashboard/profile', icon: User,             label: 'Profile' },
   ],
   Doctor: [
-    { to: '/staff-dashboard',        icon: Stethoscope, label: 'Dashboard',     end: true },
-    { to: '/staff-dashboard/upload', icon: Upload,      label: 'Upload Report' },
-    { to: '/staff-dashboard/profile', icon: User,        label: 'Profile' },
+    { to: '/staff-dashboard',        icon: LayoutDashboard, label: 'Dashboard',     end: true },
+    { to: '/staff-dashboard/upload', icon: Upload,          label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,            label: 'Profile' },
   ],
   Nurse: [
-    { to: '/staff-dashboard',        icon: Activity, label: 'Dashboard',     end: true },
-    { to: '/staff-dashboard/upload', icon: Upload,   label: 'Upload Report' },
-    { to: '/staff-dashboard/profile', icon: User,     label: 'Profile' },
+    { to: '/staff-dashboard',        icon: LayoutDashboard, label: 'Dashboard',     end: true },
+    { to: '/staff-dashboard/upload', icon: Upload,          label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,            label: 'Profile' },
   ],
   Staff: [
-    { to: '/staff-dashboard',        icon: Activity, label: 'Dashboard',     end: true },
-    { to: '/staff-dashboard/upload', icon: Upload,   label: 'Upload Report' },
-    { to: '/staff-dashboard/profile', icon: User,     label: 'Profile' },
+    { to: '/staff-dashboard',        icon: LayoutDashboard, label: 'Dashboard',     end: true },
+    { to: '/staff-dashboard/upload', icon: Upload,          label: 'Upload Report' },
+    { to: '/staff-dashboard/profile', icon: User,            label: 'Profile' },
   ],
   Admin: [
     { to: '/admin-dashboard', icon: LayoutDashboard, label: 'Dashboard',    end: true },
