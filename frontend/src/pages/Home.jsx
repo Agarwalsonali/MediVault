@@ -478,11 +478,16 @@ export default function Home() {
           display: flex; align-items: center; gap: 32px;
         }
         .mv-nav-link {
-          font-size: 0.9rem; font-weight: 500; color: var(--muted);
-          text-decoration: none; transition: color 0.2s ease;
+          font-size: 0.875rem; font-weight: 600; color: var(--muted);
+          text-decoration: none; transition: all 0.2s ease;
+          padding: 8px 18px; border-radius: 10px;
+          background: transparent;
+          border: 1px solid var(--border);
         }
         .mv-nav-link:hover {
           color: var(--text);
+          border-color: rgba(255,255,255,0.2);
+          background: var(--surface);
         }
         .mv-nav-actions { 
           display: flex; align-items: center; gap: 10px; 
@@ -586,11 +591,16 @@ export default function Home() {
           display: flex; flex-direction: column; gap: 24px;
         }
         .mv-drawer-link {
-          font-size: 1.1rem; font-weight: 500; color: var(--muted);
-          text-decoration: none; transition: color 0.2s ease;
+          font-size: 0.95rem; font-weight: 600; color: var(--muted);
+          text-decoration: none; transition: all 0.2s ease;
+          padding: 12px 18px; border-radius: 10px;
+          background: transparent;
+          border: 1px solid var(--border);
         }
         .mv-drawer-link:hover {
           color: var(--text);
+          border-color: rgba(255,255,255,0.2);
+          background: var(--surface);
         }
         .mv-drawer-actions {
           padding: 20px;
@@ -632,6 +642,14 @@ export default function Home() {
         [data-theme="dark"] .mv-nav.scrolled {
           background: rgba(26, 32, 44, 0.90) !important;
           border-color: rgba(255,255,255,0.12) !important;
+        }
+        [data-theme="dark"] .mv-nav-link {
+          background: transparent !important;
+          border-color: rgba(255,255,255,0.12) !important;
+        }
+        [data-theme="dark"] .mv-nav-link:hover {
+          background: rgba(255,255,255,0.1) !important;
+          border-color: rgba(255,255,255,0.2) !important;
         }
         [data-theme="dark"] .mv-mobile-drawer {
           background: #1a202c !important;

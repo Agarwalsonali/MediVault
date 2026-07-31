@@ -55,12 +55,12 @@ export default function Navbar({ scrolled = false }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center justify-center flex-1 px-8">
-              <ul className="flex items-center gap-8">
+              <ul className="flex items-center gap-3">
                 {navLinks.map((link) => (
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200"
+                      className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-white/15 border border-white/25 rounded-lg hover:bg-white/25 hover:border-white/35 transition-all duration-200"
                     >
                       {link.name}
                     </a>
@@ -138,7 +138,7 @@ export default function Navbar({ scrolled = false }) {
 
             {/* Navigation Links */}
             <nav className="flex-1 px-6 py-8">
-              <ul className="flex flex-col gap-6">
+              <ul className="flex flex-col gap-3">
                 {navLinks.map((link, index) => (
                   <li
                     key={link.name}
@@ -149,7 +149,7 @@ export default function Navbar({ scrolled = false }) {
                     <a
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-lg font-medium text-gray-300 hover:text-white transition-colors duration-200 block"
+                      className="px-4 py-3 text-lg font-medium text-gray-300 hover:text-white bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all duration-200 block"
                     >
                       {link.name}
                     </a>
