@@ -19,6 +19,8 @@ import {
   MapPin,
   Clock,
   Dot,
+  Menu,
+  X,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -130,6 +132,7 @@ export default function Home() {
   const [contactForm, setContactForm] = useState(CONTACT_INITIAL_STATE);
   const [contactLoading, setContactLoading] = useState(false);
   const [contactStatus, setContactStatus] = useState({ type: '', message: '' });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -137,6 +140,29 @@ export default function Home() {
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
 
   const handleContactChange = (event) => {
     const { name, value } = event.target;
@@ -198,12 +224,6 @@ export default function Home() {
           --text: #e2e8f0 !important;
           --muted: #cbd5e0 !important;
           --shadow-glow: 0 0 40px rgba(20,184,166,0.15) !important;
-        }
-
-        /* Dark mode navbar fix */
-        [data-theme="dark"] .mv-nav.scrolled {
-          background: rgba(26, 32, 44, 0.90) !important;
-          border-color: rgba(255,255,255,0.12) !important;
         }
 
         /* Dark mode stat styling */
@@ -431,13 +451,14 @@ export default function Home() {
         .mv-brand {
           display: flex; align-items: center; gap: 10px;
           text-decoration: none; color: inherit;
+          flex-shrink: 0;
         }
         .mv-brand-icon {
           width: 36px; height: 36px; border-radius: 10px;
-          background: linear-gradient(135deg, var(--teal), #00a896);
+          background: linear-gradient(135deg, #18D6C3, #0FA3A7);
           display: flex; align-items: center; justify-content: center;
           color: #fff;
-          box-shadow: 0 0 16px rgba(0,194,168,0.4);
+          box-shadow: 0 0 16px rgba(24, 214, 195, 0.4);
           position: relative;
         }
         .mv-brand-icon::before {
@@ -453,7 +474,34 @@ export default function Home() {
           background: linear-gradient(90deg, var(--text) 60%, var(--teal));
           -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .mv-nav-actions { display: flex; align-items: center; gap: 10px; }
+        .mv-nav-links {
+          display: flex; align-items: center; gap: 32px;
+        }
+        .mv-nav-link {
+          font-size: 0.9rem; font-weight: 500; color: var(--muted);
+          text-decoration: none; transition: color 0.2s ease;
+        }
+        .mv-nav-link:hover {
+          color: var(--text);
+        }
+        .mv-nav-actions { 
+          display: flex; align-items: center; gap: 10px; 
+          flex-shrink: 0;
+        }
+        .mv-hamburger {
+          display: none;
+          padding: 8px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          color: var(--muted);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .mv-hamburger:hover {
+          color: var(--text);
+          background: rgba(255,255,255,0.1);
+        }
 
         /* ── Buttons ── */
         .mv-btn {
@@ -490,6 +538,118 @@ export default function Home() {
           filter: brightness(1.08);
         }
         .mv-btn-primary:active { transform: translateY(0); }
+
+        /* ── Mobile Drawer ── */
+        .mv-mobile-drawer-overlay {
+          position: fixed; inset: 0; z-index: 200;
+          background: rgba(0,0,0,0.6);
+          backdrop-filter: blur(4px);
+          opacity: 0; pointer-events: none;
+          transition: opacity 0.3s ease;
+        }
+        .mv-mobile-drawer-overlay.open {
+          opacity: 1; pointer-events: auto;
+        }
+        .mv-mobile-drawer {
+          position: fixed; top: 0; right: 0; bottom: 0;
+          width: 80%; max-width: 340px;
+          background: var(--bg);
+          border-left: 1px solid var(--border);
+          transform: translateX(100%);
+          transition: transform 0.3s ease;
+          display: flex; flex-direction: column;
+        }
+        .mv-mobile-drawer.open {
+          transform: translateX(0);
+        }
+        .mv-drawer-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 20px;
+          border-bottom: 1px solid var(--border);
+        }
+        .mv-drawer-close {
+          padding: 8px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          color: var(--muted);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .mv-drawer-close:hover {
+          color: var(--text);
+          background: rgba(255,255,255,0.1);
+        }
+        .mv-drawer-nav {
+          flex: 1;
+          padding: 24px 20px;
+          display: flex; flex-direction: column; gap: 24px;
+        }
+        .mv-drawer-link {
+          font-size: 1.1rem; font-weight: 500; color: var(--muted);
+          text-decoration: none; transition: color 0.2s ease;
+        }
+        .mv-drawer-link:hover {
+          color: var(--text);
+        }
+        .mv-drawer-actions {
+          padding: 20px;
+          border-top: 1px solid var(--border);
+          display: flex; flex-direction: column; gap: 12px;
+        }
+        .mv-drawer-theme-btn {
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          padding: 12px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          color: var(--muted);
+          font-size: 0.95rem; font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .mv-drawer-theme-btn:hover {
+          color: var(--text);
+          background: rgba(255,255,255,0.1);
+        }
+        .mv-drawer-signin {
+          display: flex; align-items: center; justify-content: center;
+          padding: 12px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          color: var(--muted);
+          font-size: 0.95rem; font-weight: 500;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+        .mv-drawer-signin:hover {
+          color: var(--text);
+          background: rgba(255,255,255,0.1);
+        }
+
+        /* Dark mode navbar fix */
+        [data-theme="dark"] .mv-nav.scrolled {
+          background: rgba(26, 32, 44, 0.90) !important;
+          border-color: rgba(255,255,255,0.12) !important;
+        }
+        [data-theme="dark"] .mv-mobile-drawer {
+          background: #1a202c !important;
+          border-color: rgba(255,255,255,0.12) !important;
+        }
+        [data-theme="dark"] .mv-hamburger,
+        [data-theme="dark"] .mv-drawer-close,
+        [data-theme="dark"] .mv-drawer-theme-btn,
+        [data-theme="dark"] .mv-drawer-signin {
+          background: rgba(45, 55, 72, 0.6) !important;
+          border-color: rgba(255,255,255,0.12) !important;
+        }
+        [data-theme="dark"] .mv-hamburger:hover,
+        [data-theme="dark"] .mv-drawer-close:hover,
+        [data-theme="dark"] .mv-drawer-theme-btn:hover,
+        [data-theme="dark"] .mv-drawer-signin:hover {
+          background: rgba(45, 55, 72, 0.8) !important;
+        }
 
         /* ── Hero ── */
         .mv-hero {
@@ -911,41 +1071,40 @@ export default function Home() {
         .mv-footer-links a:hover { color: var(--text); }
 
         /* ── Responsive ── */
-        @media (max-width: 768px) {
+        @media (max-width: 1023px) {
           .mv-nav {
-            height: auto;
-            padding: 12px 16px;
-            flex-direction: row;
-            align-items: center;
-            gap: 12px;
+            padding: 0 clamp(1rem, 4vw, 3rem);
           }
-
-          .mv-brand {
-            align-self: center;
+          .mv-nav-links {
+            gap: 24px;
           }
-
-          .mv-brand-name {
-            font-size: 1rem;
+          .mv-nav-link {
+            font-size: 0.85rem;
           }
-
           .mv-nav-actions {
-            width: auto;
-            justify-content: flex-end;
             gap: 8px;
-            flex-shrink: 0;
           }
-
-          .mv-nav-actions .mv-btn {
-            flex: 0 0 auto;
-            justify-content: center;
+          .mv-btn-sm {
             padding: 8px 14px;
             font-size: 0.8rem;
-            min-width: auto;
-            white-space: nowrap;
           }
+        }
 
+        @media (max-width: 768px) {
+          .mv-nav {
+            padding: 0 16px;
+          }
+          .mv-nav-links,
+          .mv-nav-actions {
+            display: none;
+          }
+          .mv-hamburger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
           .mv-hero {
-            padding: 100px 16px 60px;
+            padding: 120px 16px 60px;
           }
 
           .mv-hero-title {
@@ -1119,6 +1278,15 @@ export default function Home() {
             </div>
             <span className="mv-brand-name">MediVault</span>
           </Link>
+          
+          {/* Desktop Navigation */}
+          <nav className="mv-nav-links">
+            <a href="#features" className="mv-nav-link">Features</a>
+            <a href="#about" className="mv-nav-link">About</a>
+            <a href="#contact" className="mv-nav-link">Contact</a>
+          </nav>
+
+          {/* Desktop Actions */}
           <nav className="mv-nav-actions">
             <button
               onClick={toggleTheme}
@@ -1133,10 +1301,77 @@ export default function Home() {
               Get Started <ArrowRight size={14} />
             </Link>
           </nav>
+
+          {/* Mobile Hamburger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="mv-hamburger"
+            aria-label="Open menu"
+          >
+            <Menu size={24} />
+          </button>
         </header>
 
+        {/* Mobile Menu Drawer */}
+        <div
+          className={`mv-mobile-drawer-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div
+            className={`mv-mobile-drawer ${isMobileMenuOpen ? 'open' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mv-drawer-header">
+              <Link to="/" className="mv-brand" onClick={() => setIsMobileMenuOpen(false)}>
+                <div className="mv-brand-icon">
+                  <Activity size={17} />
+                </div>
+                <span className="mv-brand-name">MediVault</span>
+              </Link>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mv-drawer-close"
+                aria-label="Close menu"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <nav className="mv-drawer-nav">
+              <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="mv-drawer-link">Features</a>
+              <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="mv-drawer-link">About</a>
+              <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="mv-drawer-link">Contact</a>
+            </nav>
+
+            <div className="mv-drawer-actions">
+              <button
+                onClick={toggleTheme}
+                className="mv-drawer-theme-btn"
+              >
+                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+              </button>
+              <Link
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mv-drawer-signin"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mv-btn mv-btn-primary mv-btn-lg"
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                Get Started <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* ── Hero ── */}
-        <section className="mv-hero">
+        <section id="about" className="mv-hero">
           <span className="mv-kicker anim-fade-up d100">
             <Sparkles size={13} /> Modern Medical Record Workflow
           </span>
@@ -1201,7 +1436,7 @@ export default function Home() {
         </div>
 
         {/* ── Features ── */}
-        <div className="mv-section" ref={featuresRef}>
+        <div id="features" className="mv-section" ref={featuresRef}>
           <div className="mv-section-label">
             <span className="mv-section-tag"><Sparkles size={13} /> Core Capabilities</span>
             <h2 className="mv-section-title">Everything your team needs</h2>
@@ -1236,7 +1471,7 @@ export default function Home() {
         </div>
 
         {/* ── Support & Help Center ── */}
-        <section id="support-help-center" className="mv-contact-section">
+        <section id="contact" className="mv-contact-section">
           <div className="mv-section-label">
             <span className="mv-section-tag"><Send size={13} /> Get in Touch</span>
             <h2 className="mv-section-title">

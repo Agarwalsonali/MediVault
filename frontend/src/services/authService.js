@@ -12,6 +12,7 @@ const FULL_NAME_KEY = 'mrms_full_name';
 const LOGIN_EMAIL_KEY = 'mrms_login_email';
 const RESET_EMAIL_KEY = 'mrms_reset_email';
 const VERIFY_EMAIL_KEY = 'mrms_verify_email';
+const LAST_ACTIVITY_KEY = 'mrms_last_activity';
 
 const ROLE_ADMIN = 'Admin';
 const ROLE_NURSE = 'Nurse';
@@ -99,6 +100,7 @@ export const clearStoredUserData = () => {
   localStorage.removeItem(LOGIN_EMAIL_KEY);
   localStorage.removeItem(RESET_EMAIL_KEY);
   localStorage.removeItem(VERIFY_EMAIL_KEY);
+  localStorage.removeItem(LAST_ACTIVITY_KEY);
   emitAuthChanged();
 };
 
